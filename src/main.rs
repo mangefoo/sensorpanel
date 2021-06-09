@@ -5,7 +5,7 @@ use std::collections::HashMap;
 fn main() {
     let (mut rl, thread) = raylib::init()
         .size(480, 800)
-        .title("Hello, World")
+        .title("SensorPanel")
         .build();
 
     rl.set_target_fps(60);
