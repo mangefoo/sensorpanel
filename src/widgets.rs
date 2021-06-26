@@ -1,25 +1,33 @@
 use raylib::prelude::*;
 use std::collections::HashMap;
 use crate::fonts::get_font;
+use crate::data::SensorData;
 
-pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>) {
+pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &SensorData) {
 
     let xf = x as f32;
     let yf = y as f32;
 
+    let cpu_utilization: i32 = data.values.get("cpu_utilization").expect("No cpu_utilization value").parse().unwrap();
+    let cpu_die_temp: i32 = data.values.get("cpu_die_temp").expect("No cpu_die_temp value").parse().unwrap();
+    let cpu_package_temp: i32 = data.values.get("cpu_package_temp").expect("No cpu_package_temp value").parse().unwrap();
+    let cpu_power: f32 = data.values.get("cpu_power").expect("No cpu_power value").parse().unwrap();
+    let cpu_voltage: f32 = data.values.get("cpu_voltage").expect("No cpu_voltage value").parse().unwrap();
+    let cpu_frequency: f32 = data.values.get("cpu_frequency").expect("No cpu_frequency value").parse().unwrap();
+
     d.draw_text_ex(get_font(fonts, "calibrib"), "CPU", Vector2::new(xf + 10.0, yf + 10.0), 50.0, 0.0, Color::WHITE);
-    d.draw_text_ex(get_font(fonts, "calibri"), "94.27 W", Vector2::new(xf + 110.0,  yf + 12.0), 20.0, 0.0, Color::WHITE);
-    d.draw_text_ex(get_font(fonts, "calibri"), "1.232 V", Vector2::new(xf + 110.0, yf + 30.0), 20.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri"), &*format!("{:.2} W", cpu_power), Vector2::new(xf + 110.0, yf + 12.0), 20.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri"), &*format!("{:.2} V", cpu_voltage), Vector2::new(xf + 110.0, yf + 30.0), 20.0, 0.0, Color::WHITE);
 
-    draw_gauge(&mut d, x + 200, y + 5, 45, get_font(fonts, "calibri"));
-    draw_gauge(&mut d, x + 275, y + 5, 67, get_font(fonts,"calibri"));
+    draw_gauge(&mut d, x + 200, y + 5, cpu_package_temp, get_font(fonts, "calibri"));
+    draw_gauge(&mut d, x + 275, y + 5, cpu_die_temp, get_font(fonts,"calibri"));
 
-    d.draw_text_ex(get_font(fonts, "calibril"), "3600 MHz", Vector2::new(xf + 340.0, yf + 18.0), 30.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibril"), &*format!("{} MHz", cpu_frequency), Vector2::new(xf + 340.0, yf + 18.0), 30.0, 0.0, Color::WHITE);
 
     d.draw_text_ex(get_font(fonts, "calibrib2"), "Usage", Vector2::new(xf + 10.0, yf + 75.0), 25.0, 0.0, Color::WHITE);
     let gradient_color_1 = Color::new(0, 200, 0, 255);
     let gradient_color_2 = Color::new(0, 40, 0, 255);
-    draw_meter_bar(&mut d, x, y, 390, 23, 45, 100, (gradient_color_1, gradient_color_2));
+    draw_meter_bar(&mut d, x, y, 390, 23, cpu_utilization, 100, (gradient_color_1, gradient_color_2));
 
     d.draw_rectangle(x + 10, y + 110, 460, 80, Color::DARKGRAY);
     d.draw_rectangle(x + 11, y + 111, 458, 78, Color::BLACK);
@@ -27,23 +35,30 @@ pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     draw_graph_grid(&mut d, x, y)
 }
 
-pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>) {
+pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &SensorData) {
 
     let xf = x as f32;
     let yf = y as f32;
 
+    let gpu_utilization: i32 = data.values.get("gpu_utilization").expect("No gpu_utilization value").parse().unwrap();
+    let gpu_die_temp: i32 = data.values.get("gpu_die_temp").expect("No gpu_die_temp value").parse().unwrap();
+    let gpu_package_temp: i32 = data.values.get("gpu_package_temp").expect("No gpu_package_temp value").parse().unwrap();
+    let gpu_power: f32 = data.values.get("gpu_power").expect("No gpu_power value").parse().unwrap();
+    let gpu_voltage: f32 = data.values.get("gpu_voltage").expect("No gpu_voltage value").parse().unwrap();
+    let gpu_frequency: f32 = data.values.get("gpu_frequency").expect("No gpu_frequency value").parse().unwrap();
+
     d.draw_text_ex(get_font(fonts, "calibrib"), "GPU", Vector2::new(xf + 10.0, yf + 10.0), 50.0, 0.0, Color::WHITE);
-    d.draw_text_ex(get_font(fonts, "calibri"), "94.27 W", Vector2::new(xf + 110.0,  yf + 12.0), 20.0, 0.0, Color::WHITE);
-    d.draw_text_ex(get_font(fonts, "calibri"), "1.232 V", Vector2::new(xf + 110.0, yf + 30.0), 20.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri"), &*format!("{:.2} W", gpu_power), Vector2::new(xf + 110.0,  yf + 12.0), 20.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri"), &*format!("{:.2} V", gpu_voltage), Vector2::new(xf + 110.0, yf + 30.0), 20.0, 0.0, Color::WHITE);
 
-    draw_gauge(&mut d, x + 200, y + 5, 65, get_font(fonts, "calibri"));
-    draw_gauge(&mut d, x + 275, y + 5, 81, get_font(fonts,"calibri"));
+    draw_gauge(&mut d, x + 200, y + 5, gpu_package_temp, get_font(fonts, "calibri"));
+    draw_gauge(&mut d, x + 275, y + 5, gpu_die_temp, get_font(fonts,"calibri"));
 
-    d.draw_text_ex(get_font(fonts, "calibril"), "3600 MHz", Vector2::new(xf + 340.0, yf + 18.0), 30.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibril"), &*format!("{} MHz", gpu_frequency), Vector2::new(xf + 340.0, yf + 18.0), 30.0, 0.0, Color::WHITE);
     let gradient_color_1 = Color::new(200, 0, 0, 255);
     let gradient_color_2 = Color::new(40, 0, 0, 255);
     d.draw_text_ex(get_font(fonts, "calibrib2"), "Usage", Vector2::new(xf + 10.0, yf + 75.0), 25.0, 0.0, Color::WHITE);
-    draw_meter_bar(&mut d, x, y, 390, 23, 45, 100, (gradient_color_1, gradient_color_2));
+    draw_meter_bar(&mut d, x, y, 390, 23, gpu_utilization, 100, (gradient_color_1, gradient_color_2));
 
     d.draw_rectangle(x + 10, y + 110, 460, 80, Color::DARKGRAY);
     d.draw_rectangle(x + 11, y + 111, 458, 78, Color::BLACK);

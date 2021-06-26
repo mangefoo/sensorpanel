@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use raylib::{RaylibHandle, RaylibThread};
-use raylib::core::text::{Font, FontLoadEx};
 use raylib::core::texture::Texture2D;
 
 pub fn get_texture<'a>(textures: &'a HashMap<String, Texture2D>, name: &str) -> &'a Texture2D {

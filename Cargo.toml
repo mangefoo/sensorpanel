@@ -1,10 +1,11 @@
 [package]
-name = "graphics"
+name = "sensorpanel"
 version = "0.1.0"
-authors = ["eriks"]
+authors = ["magnus@mindphaser.se"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 raylib = "3.5"
+rand = "0.8.4"
