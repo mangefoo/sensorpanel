@@ -115,7 +115,7 @@ fn generate_sensor_values() {
         let sensor_request = json!({
             "user_id": 4711,
             "topic": "cats",
-            "message": serde_json::to_string(&sensor_values).unwrap()
+            "message": sensor_values
         });
 
 //        let sensor_request = "\"user_id\": 4711, \"topic\": \"cats\", \"message\": {}";
@@ -148,29 +148,14 @@ fn main() {
         .title("SensorPanel")
         .build();
 
-    rl.set_target_fps(1);
+    rl.set_target_fps(60);
 
     let fonts = load_fonts(&mut rl, &thread);
     let textures = load_textures(&mut rl, &thread);
 
-    let mut rng = rand::thread_rng();
-
     let valueReceiver = ws_client_setup();
 
     let mut lastValues: HashMap<String, String> = HashMap::new();
-    lastValues.insert("cpu_utilization".to_string(), rng.gen_range(0..100).to_string());
-    lastValues.insert("cpu_die_temp".to_string(), rng.gen_range(29..100).to_string());
-    lastValues.insert("cpu_package_temp".to_string(), rng.gen_range(29..100).to_string());
-    lastValues.insert("cpu_power".to_string(), rng.gen_range(19.0..250.0).to_string());
-    lastValues.insert("cpu_voltage".to_string(), rng.gen_range(0.0..2.5).to_string());
-    lastValues.insert("cpu_frequency".to_string(), rng.gen_range(-1..4900).to_string());
-
-    lastValues.insert("gpu_utilization".to_string(), rng.gen_range(0..100).to_string());
-    lastValues.insert("gpu_die_temp".to_string(), rng.gen_range(29..100).to_string());
-    lastValues.insert("gpu_package_temp".to_string(), rng.gen_range(29..100).to_string());
-    lastValues.insert("gpu_power".to_string(), rng.gen_range(19.0..250.0).to_string());
-    lastValues.insert("gpu_voltage".to_string(), rng.gen_range(0.0..2.5).to_string());
-    lastValues.insert("gpu_frequency".to_string(), rng.gen_range(-1..3000).to_string());
 
     while !rl.window_should_close() {
 
