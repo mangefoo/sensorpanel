@@ -21,18 +21,14 @@ pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
 
     draw_gauge(&mut d, x + 200, y + 5, cpu_package_temp, get_font(fonts, "calibri"));
     draw_gauge(&mut d, x + 275, y + 5, cpu_die_temp, get_font(fonts,"calibri"));
-
     d.draw_text_ex(get_font(fonts, "calibril"), &*format!("{} MHz", cpu_frequency), Vector2::new(xf + 340.0, yf + 18.0), 30.0, 0.0, Color::WHITE);
 
-    d.draw_text_ex(get_font(fonts, "calibrib2"), "Usage", Vector2::new(xf + 10.0, yf + 75.0), 25.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibrib2"), "Usage", Vector2::new(xf + 10.0, yf + 65.0), 25.0, 0.0, Color::WHITE);
     let gradient_color_1 = Color::new(0, 200, 0, 255);
     let gradient_color_2 = Color::new(0, 40, 0, 255);
-    draw_meter_bar(&mut d, x + 80, y + 75, 390, 23, cpu_utilization, 100, (gradient_color_1, gradient_color_2));
+    draw_meter_bar(&mut d, x + 80, y + 65, 390, 23, cpu_utilization, 100, (gradient_color_1, gradient_color_2));
 
-    d.draw_rectangle(x + 10, y + 110, 460, 80, Color::DARKGRAY);
-    d.draw_rectangle(x + 11, y + 111, 458, 78, Color::BLACK);
-
-    draw_graph_grid(&mut d, x, y)
+    draw_graph_grid(&mut d, x + 10, y + 100)
 }
 
 pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &SensorData) {
@@ -57,13 +53,10 @@ pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     d.draw_text_ex(get_font(fonts, "calibril"), &*format!("{} MHz", gpu_frequency), Vector2::new(xf + 340.0, yf + 18.0), 30.0, 0.0, Color::WHITE);
     let gradient_color_1 = Color::new(200, 0, 0, 255);
     let gradient_color_2 = Color::new(40, 0, 0, 255);
-    d.draw_text_ex(get_font(fonts, "calibrib2"), "Usage", Vector2::new(xf + 10.0, yf + 75.0), 25.0, 0.0, Color::WHITE);
-    draw_meter_bar(&mut d, x + 80, y + 75, 390, 23, gpu_utilization, 100, (gradient_color_1, gradient_color_2));
+    d.draw_text_ex(get_font(fonts, "calibrib2"), "Usage", Vector2::new(xf + 10.0, yf + 65.0), 25.0, 0.0, Color::WHITE);
+    draw_meter_bar(&mut d, x + 80, y + 65, 390, 23, gpu_utilization, 100, (gradient_color_1, gradient_color_2));
 
-    d.draw_rectangle(x + 10, y + 110, 460, 80, Color::DARKGRAY);
-    d.draw_rectangle(x + 11, y + 111, 458, 78, Color::BLACK);
-
-    draw_graph_grid(&mut d, x, y)
+    draw_graph_grid(&mut d, x + 10, y + 100)
 }
 
 pub fn draw_mem_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>) {
@@ -80,24 +73,24 @@ pub fn draw_mem_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
 
     d.draw_text_ex(get_font(fonts, "calibril"), "3600 MHz", Vector2::new(xf + 340.0, yf + 18.0), 30.0, 0.0, Color::WHITE);
 
-    d.draw_text_ex(get_font(fonts, "calibrib2"), "Usage", Vector2::new(xf + 10.0, yf + 75.0), 25.0, 0.0, Color::WHITE);
-    draw_meter_bar(&mut d, x + 80, y + 75, 390, 23, 45, 100, (Color::ORANGE, Color::BLACK));
+    d.draw_text_ex(get_font(fonts, "calibrib2"), "Usage", Vector2::new(xf + 10.0, yf + 65.0), 25.0, 0.0, Color::WHITE);
+    draw_meter_bar(&mut d, x + 80, y + 65, 390, 23, 45, 100, (Color::ORANGE, Color::BLACK));
 
-    d.draw_rectangle(x + 10, y + 110, 460, 80, Color::DARKGRAY);
-    d.draw_rectangle(x + 11, y + 111, 458, 78, Color::BLACK);
-
-    draw_graph_grid(&mut d, x, y)
+    draw_graph_grid(&mut d, x + 10, y + 100)
 }
 
 pub fn draw_graph_grid(d: &mut &mut RaylibDrawHandle, x: i32, y: i32) {
     let grid_color = Color::new(49, 50, 50, 255);
 
+    d.draw_rectangle(x, y, 460, 80, Color::DARKGRAY);
+    d.draw_rectangle(x + 1, y + 1, 458, 78, Color::BLACK);
+
     for i in 0..(460 / 10) {
-        d.draw_line(x + 9 + i * 10, y + 111, x + 10 + i * 10, y + 189, grid_color);
+        d.draw_line(x + 9 + i * 10, y + 1, x + 9 + i * 10, y + 79, grid_color);
     }
 
     for i in 0..(80 / 10) {
-        d.draw_line(x + 10, y + 111 + i * 10 + 1, x + 468, y + 111 + i * 10 + 1, grid_color);
+        d.draw_line(x, y + 1 + i * 10 + 1, x + 458, y + 1 + i * 10 + 1, grid_color);
     }
 }
 
@@ -106,7 +99,7 @@ pub fn draw_meter_bar(d: &mut &mut RaylibDrawHandle, x: i32, y: i32, width: i32,
     d.draw_rectangle(x, y, width, height, Color::DARKGRAY);
     d.draw_rectangle(x + 1, y + 1, width - 2, height - 2, Color::BLACK);
 
-    let bar_width = 360 * value / max_value;
+    let bar_width = width * value / max_value;
     d.draw_rectangle_gradient_v(x + 1, y + 1, bar_width, height - 2, color.0, color.1);
 }
 
