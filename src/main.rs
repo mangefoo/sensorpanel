@@ -4,7 +4,7 @@ use crate::textures::load_textures;
 use crate::data::{SensorData};
 use std::collections::HashMap;
 use rand::Rng;
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 use serde_json::json;
 use reqwest::{Error, blocking, Url};
 use tokio::runtime::Runtime;
@@ -26,28 +26,35 @@ mod data;
 
 #[derive(Deserialize, Debug)]
 struct RegisterResponse {
-    url: String,
+    id: String,
 }
 
-fn ws_client_setup() -> Receiver<HashMap<String, String>> {
-    let (tx, rx): (Sender<HashMap<String, String>>, Receiver<HashMap<String, String>>) = mpsc::channel();
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct SensorReport {
+    reporter: String,
+    topic: String,
+    sensors: HashMap<String, String>,
+}
+
+fn ws_client_setup() -> Receiver<SensorReport> {
+    let (tx, rx): (Sender<SensorReport>, Receiver<SensorReport>) = mpsc::channel();
     let thread_tx = tx.clone();
 
     thread::spawn(|| {
-        let url = match ws_register_client() {
+        let id = match ws_register_client() {
             Err(error) => panic!("Failed to get WS URL"),
             Ok(url) => url
         };
 
-        println!("Got WS URL: {}", url);
+        println!("Got WS ID: {}", id);
 
-        ws_read_loop(url, thread_tx);
+        ws_read_loop(format!("ws://localhost:8967/ws/{}", id), thread_tx);
     });
 
     return rx;
 }
 
-fn ws_read_loop(url: String, valueSender: Sender<HashMap<String, String>>) {
+fn ws_read_loop(url: String, valueSender: Sender<SensorReport>) {
     let (mut socket, response) =
         connect(Url::parse(&url).unwrap()).expect("Can't connect");
 
@@ -61,18 +68,18 @@ fn ws_read_loop(url: String, valueSender: Sender<HashMap<String, String>>) {
     loop {
         let msg = socket.read_message().expect("Error reading message");
         println!("Received: {}", msg);
-        let values: HashMap<String, String> = serde_json::from_str(msg.to_text().unwrap()).unwrap();
-        println!("Values: {:?}", values);
-        valueSender.send(values);
+        let report: SensorReport = serde_json::from_str(msg.to_text().unwrap()).unwrap();
+        println!("Values: {:?}", report);
+        valueSender.send(report);
     }
 }
 
 fn ws_register_client() -> Result<String, reqwest::Error> {
     let register_body = json!({
-        "user_id": 4711,
+        "topics": ["sensors"],
     });
 
-    let request_url = "http://127.0.0.1:8000/register";
+    let request_url = "http://127.0.0.1:8967/register";
 
     let response = blocking::Client::new()
         .post(request_url)
@@ -89,7 +96,7 @@ fn ws_register_client() -> Result<String, reqwest::Error> {
         Ok(json) => json
     };
 
-    Ok(register_response.url)
+    Ok(register_response.id)
 }
 
 fn generate_sensor_values() {
@@ -155,18 +162,25 @@ fn main() {
 
     let valueReceiver = ws_client_setup();
 
-    let mut lastValues: HashMap<String, String> = HashMap::new();
+    let mut lastValues = SensorReport {
+        reporter: "".to_string(),
+        topic: "".to_string(),
+        sensors: HashMap::<String, String>::new()
+    };
 
     while !rl.window_should_close() {
 
         let clonedLastValues = lastValues.clone();
         let receivedValues = match valueReceiver.try_recv() {
-            Ok(values) => { lastValues = values.clone(); values }
+            Ok(report) => {
+                lastValues = report.clone();
+                report
+            }
             Err(_) => { clonedLastValues }
         };
 
         let sensor_data = SensorData {
-            values: receivedValues
+            values: receivedValues.sensors
         };
         let mut d = rl.begin_drawing(&thread);
         draw_windows_panel(&fonts, &textures, &mut d, &sensor_data);
