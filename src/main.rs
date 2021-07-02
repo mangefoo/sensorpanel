@@ -143,6 +143,7 @@ fn generate_sensor_values() {
 }
 
 fn main() {
+    #[link(name="libray", kind="dylib")]
     let args: Vec<String> = env::args().collect();
     println!("Arguments: {:?}", args);
     if args.len() > 1 && args[1] == "generate" {
