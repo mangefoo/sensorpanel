@@ -48,7 +48,7 @@ fn ws_client_setup() -> Receiver<SensorReport> {
 
         println!("Got WS ID: {}", id);
 
-        ws_read_loop(format!("ws://localhost:8967/ws/{}", id), thread_tx);
+        ws_read_loop(format!("ws://sensor-relay.int.mindphaser.se/ws/{}", id), thread_tx);
     });
 
     return rx;
@@ -79,7 +79,7 @@ fn ws_register_client() -> Result<String, reqwest::Error> {
         "topics": ["sensors"],
     });
 
-    let request_url = "http://127.0.0.1:8967/register";
+    let request_url = "http://sensor-relay.int.mindphaser.se/register";
 
     let response = blocking::Client::new()
         .post(request_url)
