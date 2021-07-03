@@ -43,6 +43,7 @@ pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     let gpu_power: f32 = data.values.get("gpu_power").or(Some(&"0".to_string())).expect("No gpu_power value").parse().unwrap();
     let gpu_voltage: f32 = data.values.get("gpu_voltage").or(Some(&"0".to_string())).expect("No gpu_voltage value").parse().unwrap();
     let gpu_frequency: f32 = data.values.get("gpu_frequency").or(Some(&"0".to_string())).expect("No gpu_frequency value").parse().unwrap();
+    let gpu_fps: f32 = data.values.get("gpu_fps").or(Some(&"0".to_string())).expect("No gpu_fps value").parse().unwrap();
 
     d.draw_text_ex(get_font(fonts, "calibrib"), "GPU", Vector2::new(xf + 10.0, yf + 10.0), 50.0, 0.0, Color::WHITE);
     d.draw_text_ex(get_font(fonts, "calibri"), &*format!("{:.2} W", gpu_power), Vector2::new(xf + 110.0,  yf + 12.0), 20.0, 0.0, Color::WHITE);
@@ -51,7 +52,8 @@ pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     draw_gauge(&mut d, x + 200, y + 5, gpu_die_temp as i32, get_font(fonts, "calibri"));
     draw_gauge(&mut d, x + 275, y + 5, gpu_package_temp as i32, get_font(fonts,"calibri"));
 
-    d.draw_text_ex(get_font(fonts, "calibril"), &*format!("{} MHz", gpu_frequency), Vector2::new(xf + 340.0, yf + 18.0), 30.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibril"), &*format!("{} MHz", gpu_frequency), Vector2::new(xf + 340.0, yf + 3.0), 30.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibril"), &*format!("{} FPS", gpu_fps), Vector2::new(xf + 340.0, yf + 32.0), 30.0, 0.0, Color::WHITE);
     let gradient_color_1 = Color::new(200, 0, 0, 255);
     let gradient_color_2 = Color::new(40, 0, 0, 255);
     d.draw_text_ex(get_font(fonts, "calibrib2"), "Usage", Vector2::new(xf + 10.0, yf + 65.0), 25.0, 0.0, Color::WHITE);
