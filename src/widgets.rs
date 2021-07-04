@@ -2,6 +2,7 @@ use raylib::prelude::*;
 use std::collections::HashMap;
 use crate::fonts::get_font;
 use crate::data::SensorData;
+use chrono::Local;
 
 pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &SensorData) {
 
@@ -13,7 +14,7 @@ pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     let cpu_package_temp: f32 = data.values.get("cpu_package_temp").or(Some(&"0".to_string())).expect("No cpu_package_temp value").parse().unwrap();
     let cpu_power: f32 = data.values.get("cpu_power").or(Some(&"0".to_string())).expect("No cpu_power value").parse().unwrap();
 //    let cpu_voltage: f32 = data.values.get("cpu_voltage").or(Some(&"0".to_string())).expect("No cpu_voltage value").parse().unwrap();
-    let cpu_frequency: f32 = data.values.get("cpu_frequency").or(Some(&"0".to_string())).expect("No cpu_frequency value").parse().unwrap();
+    let cpu_frequency: f32 = data.values.get("cpu_core_frequency_1").or(Some(&"0".to_string())).expect("No cpu_frequency value").parse().unwrap();
 
     d.draw_text_ex(get_font(fonts, "calibrib"), "CPU", Vector2::new(xf + 10.0, yf + 10.0), 50.0, 0.0, Color::WHITE);
     d.draw_text_ex(get_font(fonts, "calibri"), &*format!("{:.2} W", cpu_power), Vector2::new(xf + 110.0, yf + 21.0), 20.0, 0.0, Color::WHITE);
@@ -29,6 +30,30 @@ pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     draw_meter_bar(&mut d, x + 80, y + 65, 390, 23, cpu_utilization as i32, 100, (gradient_color_1, gradient_color_2), fonts);
 
     draw_graph_grid(&mut d, x + 10, y + 100)
+}
+
+pub fn draw_core_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &SensorData) {
+
+    let gradient_color_1 = Color::new(0, 200, 0, 255);
+    let gradient_color_2 = Color::new(0, 40, 0, 255);
+
+    d.draw_text_ex(get_font(fonts, "calibrib"), "CPU Cores", Vector2::new(x as f32, y as f32 + 10.0), 50.0, 0.0, Color::WHITE);
+    for core in 1..9 {
+        let core_load: f32 = data.values.get(&*format!("cpu_core_load_{}", core)).unwrap_or(&"0".to_string()).parse().unwrap();
+        let core_frequency: f32 = data.values.get(&*format!("cpu_core_frequency_{}", core)).unwrap_or(&"0".to_string()).parse().unwrap();
+        let core_y = y + (core - 1) * 25 + 65;
+        let core_frequency = format!("{:.0} MHz", core_frequency);
+        d.draw_text_ex(get_font(fonts, "calibri"), &*format!("#{}", core), Vector2::new(x as f32, core_y as f32), 20.0, 0.0, Color::WHITE);
+        draw_meter_bar_with_label(&mut d, x + 30, core_y, 195, 23, core_load as i32, 100, (gradient_color_1, gradient_color_2), fonts, core_frequency, 60.0, Color::WHITE);
+    }
+    for core in 9..17 {
+        let core_load: f32 = data.values.get(&*format!("cpu_core_load_{}", core)).unwrap_or(&"0".to_string()).parse().unwrap();
+        let core_frequency: f32 = data.values.get(&*format!("cpu_core_frequency_{}", core)).unwrap_or(&"0".to_string()).parse().unwrap();
+        let core_y = y + (core - 9) * 25 + 65;
+        let core_frequency = format!("{:.0} MHz", core_frequency);
+        d.draw_text_ex(get_font(fonts, "calibri"), &*format!("#{}", core), Vector2::new(x as f32 + 240.0, core_y as f32), 20.0, 0.0, Color::WHITE);
+        draw_meter_bar_with_label(&mut d, x + 275, core_y, 195, 23, core_load as i32, 100, (gradient_color_1, gradient_color_2), fonts, core_frequency, 60.0, Color::WHITE);
+    }
 }
 
 pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &SensorData) {
@@ -82,6 +107,11 @@ pub fn draw_mem_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     draw_graph_grid(&mut d, x + 10, y + 100)
 }
 
+pub fn draw_time_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &SensorData) {
+    let date = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+    d.draw_text_ex(get_font(fonts, "calibri"), &date, Vector2::new(x as f32, y as f32), 20.0, 0.0, Color::WHITE);
+}
+
 pub fn draw_graph_grid(d: &mut &mut RaylibDrawHandle, x: i32, y: i32) {
     let grid_color = Color::new(49, 50, 50, 255);
 
@@ -98,15 +128,18 @@ pub fn draw_graph_grid(d: &mut &mut RaylibDrawHandle, x: i32, y: i32) {
 }
 
 pub fn draw_meter_bar(d: &mut &mut RaylibDrawHandle, x: i32, y: i32, width: i32, height: i32, value: i32, max_value: i32, color: (Color, Color), fonts: &HashMap<String, Font>) {
+    let label = format!("{} %", value.to_string());
+    draw_meter_bar_with_label(d, x, y, width, height, value, max_value, color, fonts, label, width as f32 / 2.0 - 15.0, Color::WHITE);
+}
 
+pub fn draw_meter_bar_with_label(d: &mut &mut RaylibDrawHandle, x: i32, y: i32, width: i32, height: i32, value: i32, max_value: i32, color: (Color, Color), fonts: &HashMap<String, Font>, label: String, label_pos: f32, label_color: Color) {
     d.draw_rectangle(x, y, width, height, Color::DARKGRAY);
     d.draw_rectangle(x + 1, y + 1, width - 2, height - 2, Color::BLACK);
 
     let bar_width = width * value / max_value;
     d.draw_rectangle_gradient_v(x + 1, y + 1, bar_width, height - 2, color.0, color.1);
 
-    let percent = format!("{} %", value.to_string());
-    d.draw_text_ex(get_font(fonts, "calibri"), &percent, Vector2::new((x - 15) as f32 + width as f32 / 2.0, y as f32 + 3.0), 20.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri"), &label, Vector2::new(label_pos + x as f32, y as f32 + 3.0), 20.0, 0.0, label_color);
 }
 
 pub fn draw_gauge(d: &mut RaylibDrawHandle, x: i32, y: i32, value: i32, font: &Font) {
