@@ -2,7 +2,6 @@ use raylib::prelude::*;
 use std::collections::HashMap;
 use crate::fonts::get_font;
 use crate::data::SensorData;
-use reqwest::get;
 
 pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &SensorData) {
 
@@ -13,7 +12,7 @@ pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     let cpu_die_temp: f32 = data.values.get("cpu_die_temp").or(Some(&"0".to_string())).expect("No cpu_die_temp value").parse().unwrap();
     let cpu_package_temp: f32 = data.values.get("cpu_package_temp").or(Some(&"0".to_string())).expect("No cpu_package_temp value").parse().unwrap();
     let cpu_power: f32 = data.values.get("cpu_power").or(Some(&"0".to_string())).expect("No cpu_power value").parse().unwrap();
-    let cpu_voltage: f32 = data.values.get("cpu_voltage").or(Some(&"0".to_string())).expect("No cpu_voltage value").parse().unwrap();
+//    let cpu_voltage: f32 = data.values.get("cpu_voltage").or(Some(&"0".to_string())).expect("No cpu_voltage value").parse().unwrap();
     let cpu_frequency: f32 = data.values.get("cpu_frequency").or(Some(&"0".to_string())).expect("No cpu_frequency value").parse().unwrap();
 
     d.draw_text_ex(get_font(fonts, "calibrib"), "CPU", Vector2::new(xf + 10.0, yf + 10.0), 50.0, 0.0, Color::WHITE);

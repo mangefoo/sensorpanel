@@ -6,15 +6,12 @@ use std::collections::HashMap;
 use rand::Rng;
 use serde::{Serialize, Deserialize};
 use serde_json::json;
-use reqwest::{Error, blocking, Url};
-use tokio::runtime::Runtime;
+use reqwest::{blocking, Url};
 use std::{thread, env};
-use tungstenite::{connect, Message};
-use std::sync::mpsc::{Sender, Receiver, TryRecvError};
+use tungstenite::{connect};
+use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
-use std::collections::hash_map::RandomState;
 use std::time::Duration;
-use raylib::ease::sine_out;
 
 extern crate rand;
 
@@ -42,7 +39,7 @@ fn ws_client_setup() -> Receiver<SensorReport> {
 
     thread::spawn(|| {
         let id = match ws_register_client() {
-            Err(error) => panic!("Failed to get WS URL"),
+            Err(error) => panic!("Failed to get WS URL: {}", error),
             Ok(url) => url
         };
 
@@ -54,7 +51,7 @@ fn ws_client_setup() -> Receiver<SensorReport> {
     return rx;
 }
 
-fn ws_read_loop(url: String, valueSender: Sender<SensorReport>) {
+fn ws_read_loop(url: String, value_sender: Sender<SensorReport>) {
     let (mut socket, response) =
         connect(Url::parse(&url).unwrap()).expect("Can't connect");
 
@@ -70,7 +67,11 @@ fn ws_read_loop(url: String, valueSender: Sender<SensorReport>) {
         println!("Received: {}", msg);
         let report: SensorReport = serde_json::from_str(msg.to_text().unwrap()).unwrap();
         println!("Values: {:?}", report);
-        valueSender.send(report);
+        let result = value_sender.send(report);
+        match result {
+            Err(error) => { println!("Failed to send request: {}", error)}
+            _ => {}
+        }
     }
 }
 
@@ -103,7 +104,7 @@ fn generate_sensor_values() {
 
     let mut rng = rand::thread_rng();
 
-    while true {
+    loop {
         let mut sensor_values: HashMap<String, String> = HashMap::new();
         sensor_values.insert("cpu_utilization".to_string(), rng.gen_range(0..100).to_string());
         sensor_values.insert("cpu_die_temp".to_string(), rng.gen_range(29..100).to_string());
@@ -161,9 +162,9 @@ fn main() {
     let fonts = load_fonts(&mut rl, &thread);
     let textures = load_textures(&mut rl, &thread);
 
-    let valueReceiver = ws_client_setup();
+    let value_receiver = ws_client_setup();
 
-    let mut lastValues = SensorReport {
+    let mut last_values = SensorReport {
         reporter: "".to_string(),
         topic: "".to_string(),
         sensors: HashMap::<String, String>::new()
@@ -171,17 +172,17 @@ fn main() {
 
     while !rl.window_should_close() {
 
-        let clonedLastValues = lastValues.clone();
-        let receivedValues = match valueReceiver.try_recv() {
+        let cloned_last_values = last_values.clone();
+        let received_values = match value_receiver.try_recv() {
             Ok(report) => {
-                lastValues = report.clone();
+                last_values = report.clone();
                 report
             }
-            Err(_) => { clonedLastValues }
+            Err(_) => { cloned_last_values }
         };
 
         let sensor_data = SensorData {
-            values: receivedValues.sensors
+            values: received_values.sensors
         };
         let mut d = rl.begin_drawing(&thread);
         draw_windows_panel(&fonts, &textures, &mut d, &sensor_data);
