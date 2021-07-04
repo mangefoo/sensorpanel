@@ -16,5 +16,5 @@ pub fn draw_windows_panel(fonts: &HashMap<String, Font>, textures: &HashMap<Stri
 
     draw_cpu_panel(&mut d, 0, 5, &fonts, data);
     draw_gpu_panel(&mut d, 0, 207, &fonts, data);
-    draw_mem_panel(&mut d, 0, 409, &fonts);
+    draw_mem_panel(&mut d, 0, 409, &fonts, data);
 }

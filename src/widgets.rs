@@ -17,8 +17,8 @@ pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     let cpu_frequency: f32 = data.values.get("cpu_frequency").or(Some(&"0".to_string())).expect("No cpu_frequency value").parse().unwrap();
 
     d.draw_text_ex(get_font(fonts, "calibrib"), "CPU", Vector2::new(xf + 10.0, yf + 10.0), 50.0, 0.0, Color::WHITE);
-    d.draw_text_ex(get_font(fonts, "calibri"), &*format!("{:.2} W", cpu_power), Vector2::new(xf + 110.0, yf + 12.0), 20.0, 0.0, Color::WHITE);
-    d.draw_text_ex(get_font(fonts, "calibri"), &*format!("{:.2} V", cpu_voltage), Vector2::new(xf + 110.0, yf + 30.0), 20.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri"), &*format!("{:.2} W", cpu_power), Vector2::new(xf + 110.0, yf + 21.0), 20.0, 0.0, Color::WHITE);
+    //d.draw_text_ex(get_font(fonts, "calibri"), &*format!("{:.2} V", cpu_voltage), Vector2::new(xf + 110.0, yf + 30.0), 20.0, 0.0, Color::WHITE);
 
     draw_gauge(&mut d, x + 200, y + 5, cpu_die_temp as i32, get_font(fonts, "calibri"));
     draw_gauge(&mut d, x + 275, y + 5, cpu_package_temp as i32, get_font(fonts,"calibri"));
@@ -62,22 +62,23 @@ pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     draw_graph_grid(&mut d, x + 10, y + 100)
 }
 
-pub fn draw_mem_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>) {
+pub fn draw_mem_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &SensorData) {
 
     let xf = x as f32;
     let yf = y as f32;
 
+    let mem_used : f32 = data.values.get("mem_used").or(Some(&"0".to_string())).expect("No mem_used value").parse().unwrap();
+    let mem_available : f32 = data.values.get("mem_available").or(Some(&"0".to_string())).expect("No mem_used value").parse().unwrap();
+    let mem_used_percent = mem_used / (mem_used + mem_available);
+
     d.draw_text_ex(get_font(fonts, "calibri_bold_40"), "Mem", Vector2::new(xf + 10.0, yf + 10.0), 40.0, 0.0, Color::WHITE);
-    d.draw_text_ex(get_font(fonts, "calibri"), "94.27 W", Vector2::new(xf + 110.0,  yf + 12.0), 20.0, 0.0, Color::WHITE);
-    d.draw_text_ex(get_font(fonts, "calibri"), "1.232 V", Vector2::new(xf + 110.0, yf + 30.0), 20.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri"), &*format!("Available: {:.2} GB", mem_available), Vector2::new(xf + 110.0,  yf + 12.0), 20.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri"), &*format!("Used: {:.2} GB", mem_used), Vector2::new(xf + 141.0,  yf + 30.0), 20.0, 0.0, Color::WHITE);
 
-    draw_gauge(&mut d, x + 200, y + 5, 75, get_font(fonts, "calibri"));
-    draw_gauge(&mut d, x + 275, y + 5, 99, get_font(fonts,"calibri"));
-
-    d.draw_text_ex(get_font(fonts, "calibril"), "3600 MHz", Vector2::new(xf + 340.0, yf + 18.0), 30.0, 0.0, Color::WHITE);
-
+    let gradient_color_1 = Color::new(50, 50, 255, 255);
+    let gradient_color_2 = Color::new(10, 10, 50, 255);
     d.draw_text_ex(get_font(fonts, "calibrib2"), "Usage", Vector2::new(xf + 10.0, yf + 65.0), 25.0, 0.0, Color::WHITE);
-    draw_meter_bar(&mut d, x + 80, y + 65, 390, 23, 50, 100, (Color::ORANGE, Color::BLACK), fonts);
+    draw_meter_bar(&mut d, x + 80, y + 65, 390, 23, (mem_used_percent * 100.0) as i32, 100, (gradient_color_1, gradient_color_2), fonts);
 
     draw_graph_grid(&mut d, x + 10, y + 100)
 }
