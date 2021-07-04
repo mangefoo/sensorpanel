@@ -4,7 +4,7 @@ use crate::fonts::get_font;
 use crate::data::SensorData;
 use chrono::Local;
 
-pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &SensorData) {
+pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &SensorData, historical: &Vec<f32>) {
 
     let xf = x as f32;
     let yf = y as f32;
@@ -29,7 +29,8 @@ pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     let gradient_color_2 = Color::new(0, 40, 0, 255);
     draw_meter_bar(&mut d, x + 80, y + 65, 390, 23, cpu_utilization as i32, 100, (gradient_color_1, gradient_color_2), fonts);
 
-    draw_graph_grid(&mut d, x + 10, y + 100)
+    draw_graph_grid(&mut d, x + 10, y + 100);
+    draw_graph(&mut d, x + 10, y + 100, historical, Color::GREEN);
 }
 
 pub fn draw_core_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &SensorData) {
@@ -41,7 +42,7 @@ pub fn draw_core_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Has
     for core in 1..9 {
         let core_load: f32 = data.values.get(&*format!("cpu_core_load_{}", core)).unwrap_or(&"0".to_string()).parse().unwrap();
         let core_frequency: f32 = data.values.get(&*format!("cpu_core_frequency_{}", core)).unwrap_or(&"0".to_string()).parse().unwrap();
-        let core_y = y + (core - 1) * 25 + 65;
+        let core_y = y + (core - 1) * 28 + 65;
         let core_frequency = format!("{:.0} MHz", core_frequency);
         d.draw_text_ex(get_font(fonts, "calibri"), &*format!("#{}", core), Vector2::new(x as f32, core_y as f32), 20.0, 0.0, Color::WHITE);
         draw_meter_bar_with_label(&mut d, x + 30, core_y, 195, 23, core_load as i32, 100, (gradient_color_1, gradient_color_2), fonts, core_frequency, 60.0, Color::WHITE);
@@ -49,14 +50,14 @@ pub fn draw_core_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Has
     for core in 9..17 {
         let core_load: f32 = data.values.get(&*format!("cpu_core_load_{}", core)).unwrap_or(&"0".to_string()).parse().unwrap();
         let core_frequency: f32 = data.values.get(&*format!("cpu_core_frequency_{}", core)).unwrap_or(&"0".to_string()).parse().unwrap();
-        let core_y = y + (core - 9) * 25 + 65;
+        let core_y = y + (core - 9) * 28 + 65;
         let core_frequency = format!("{:.0} MHz", core_frequency);
         d.draw_text_ex(get_font(fonts, "calibri"), &*format!("#{}", core), Vector2::new(x as f32 + 240.0, core_y as f32), 20.0, 0.0, Color::WHITE);
         draw_meter_bar_with_label(&mut d, x + 275, core_y, 195, 23, core_load as i32, 100, (gradient_color_1, gradient_color_2), fonts, core_frequency, 60.0, Color::WHITE);
     }
 }
 
-pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &SensorData) {
+pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &SensorData, historical: &Vec<f32>) {
 
     let xf = x as f32;
     let yf = y as f32;
@@ -83,7 +84,8 @@ pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     d.draw_text_ex(get_font(fonts, "calibrib2"), "Usage", Vector2::new(xf + 10.0, yf + 65.0), 25.0, 0.0, Color::WHITE);
     draw_meter_bar(&mut d, x + 80, y + 65, 390, 23, gpu_utilization as i32, 100, (gradient_color_1, gradient_color_2), fonts);
 
-    draw_graph_grid(&mut d, x + 10, y + 100)
+    draw_graph_grid(&mut d, x + 10, y + 100);
+    draw_graph(&mut d, x + 10, y + 100, historical, Color::RED);
 }
 
 pub fn draw_mem_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &SensorData) {
@@ -124,6 +126,23 @@ pub fn draw_graph_grid(d: &mut &mut RaylibDrawHandle, x: i32, y: i32) {
 
     for i in 0..(80 / 10) {
         d.draw_line(x, y + 1 + i * 10 + 1, x + 458, y + 1 + i * 10 + 1, grid_color);
+    }
+}
+
+fn draw_graph(d: &mut &mut RaylibDrawHandle, x: i32, y: i32, historical: &Vec<f32>, color: Color) {
+
+    if historical.len() == 0 {
+        return;
+    }
+
+    let mut last = historical.get(historical.len() - 1).unwrap().clone();
+    let mut scew = 0;
+    let entries = if historical.len() > 231 { 231 } else { historical.len() };
+    for i in 2..entries {
+        let value = historical[historical.len() - i];
+        d.draw_line(x + 460 - 1 - scew * 2 as i32, y + 80 - (last * 0.78) as i32, x + 460 - 1 - (scew + 1) * 2 as i32, y + 80 - (value * 0.78) as i32, color);
+        last = value;
+        scew = scew + 1;
     }
 }
 
