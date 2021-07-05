@@ -64,9 +64,7 @@ fn ws_read_loop(url: String, value_sender: Sender<SensorReport>) {
 
     loop {
         let msg = socket.read_message().expect("Error reading message");
-        println!("Received: {}", msg);
         let report: SensorReport = serde_json::from_str(msg.to_text().unwrap()).unwrap();
-        println!("Values: {:?}", report);
         let result = value_sender.send(report);
         match result {
             Err(error) => { println!("Failed to send request: {}", error)}
@@ -164,60 +162,26 @@ fn main() {
 
     let value_receiver = ws_client_setup();
 
-    let mut last_values = SensorReport {
-        reporter: "".to_string(),
-        topic: "".to_string(),
-        sensors: HashMap::<String, String>::new()
-    };
-
-    let mut historical_cpu_load = Vec::new();
-    let mut historical_gpu_load = Vec::new();
+    let mut data = Vec::new();
+    let historical_reports_count = 500;
 
     while !rl.window_should_close() {
-
-        let mut historical_cpu_load_clone = historical_cpu_load.clone();
-        let mut historical_gpu_load_clone = historical_gpu_load.clone();
-
-        let cloned_last_values = last_values.clone();
-        let received_values = match value_receiver.try_recv() {
+        match value_receiver.try_recv() {
             Ok(report) => {
-                last_values = report.clone();
-
-                let cpu_utilization: f32 = report.sensors.get("cpu_utilization").or(Some(&"0".to_string())).unwrap().parse().unwrap();
-                historical_cpu_load_clone.push(cpu_utilization);
-                println!("Values: {}", historical_cpu_load_clone.len());
-                if (historical_cpu_load_clone.len() > 240) {
-                    historical_cpu_load_clone.remove(0);
+                data.push(SensorData { values: report.sensors.clone() });
+                if data.len() > historical_reports_count {
+                    data.remove(0);
                 }
-
-                let gpu_utilization: f32 = report.sensors.get("gpu_utilization").or(Some(&"0".to_string())).unwrap().parse().unwrap();
-                historical_gpu_load_clone.push(gpu_utilization);
-                println!("Values: {}", historical_gpu_load_clone.len());
-                if (historical_gpu_load_clone.len() > 240) {
-                    historical_gpu_load_clone.remove(0);
-                }
-
-                report
             }
-            Err(_) => { cloned_last_values }
+            Err(_) => {}
         };
 
-
-        let sensor_data = SensorData {
-            values: received_values.sensors
-        };
-
-        // let mut hist_clone = historical.clone();
-        // hist_clone.push(cpu_utilization);
-        // println!("Values: {}", hist_clone.len());
-        // if (hist_clone.len() > 199) {
-        //     hist_clone.remove(-1);
-        // }
+        if data.len() == 0 {
+            continue;
+        }
 
         let mut d = rl.begin_drawing(&thread);
-        draw_windows_panel(&fonts, &textures, &mut d, &sensor_data, &historical_cpu_load_clone, &historical_gpu_load);
-        historical_cpu_load = historical_cpu_load_clone.clone();
-        historical_gpu_load = historical_gpu_load_clone.clone();
+        draw_windows_panel(&fonts, &textures, &mut d, &data);
     }
 }
 
