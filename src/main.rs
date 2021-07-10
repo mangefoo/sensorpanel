@@ -3,18 +3,17 @@ use crate::windows_panel::draw_windows_panel;
 use crate::textures::load_textures;
 use crate::data::{SensorData};
 use std::collections::HashMap;
-use rand::Rng;
 use serde::{Serialize, Deserialize};
 use serde_json::json;
 use reqwest::{blocking, Url};
-use std::{thread, env};
+use std::{thread};
 use tungstenite::{connect};
 use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
-use std::time::Duration;
+use crate::config::{read_config, Config};
+use clap::{App, Arg};
 
-extern crate rand;
-
+mod config;
 mod fonts;
 mod textures;
 mod widgets;
@@ -33,20 +32,22 @@ pub struct SensorReport {
     sensors: HashMap<String, String>,
 }
 
-fn ws_client_setup() -> Receiver<SensorReport> {
+fn ws_client_setup(config: &Config) -> Receiver<SensorReport> {
     let (tx, rx): (Sender<SensorReport>, Receiver<SensorReport>) = mpsc::channel();
     let thread_tx = tx.clone();
-
-    thread::spawn(|| {
-        let id = match ws_register_client() {
+    let relay_host= config.relay_host.clone();
+    let thread_fn = move || {
+        let id = match ws_register_client(&relay_host) {
             Err(error) => panic!("Failed to get WS URL: {}", error),
             Ok(url) => url
         };
 
         println!("Got WS ID: {}", id);
 
-        ws_read_loop(format!("ws://sensor-relay.int.mindphaser.se/ws/{}", id), thread_tx);
-    });
+        ws_read_loop(format!("ws://{}/ws/{}", relay_host, id), thread_tx);
+    };
+
+    thread::spawn(thread_fn);
 
     return rx;
 }
@@ -73,12 +74,12 @@ fn ws_read_loop(url: String, value_sender: Sender<SensorReport>) {
     }
 }
 
-fn ws_register_client() -> Result<String, reqwest::Error> {
+fn ws_register_client(relay_host: &String) -> Result<String, reqwest::Error> {
     let register_body = json!({
         "topics": ["sensors"],
     });
 
-    let request_url = "http://sensor-relay.int.mindphaser.se/register";
+    let request_url = format!("http://{}/register", relay_host);
 
     let response = blocking::Client::new()
         .post(request_url)
@@ -98,57 +99,22 @@ fn ws_register_client() -> Result<String, reqwest::Error> {
     Ok(register_response.id)
 }
 
-fn generate_sensor_values() {
-
-    let mut rng = rand::thread_rng();
-
-    loop {
-        let mut sensor_values: HashMap<String, String> = HashMap::new();
-        sensor_values.insert("cpu_utilization".to_string(), rng.gen_range(0..100).to_string());
-        sensor_values.insert("cpu_die_temp".to_string(), rng.gen_range(29..100).to_string());
-        sensor_values.insert("cpu_package_temp".to_string(), rng.gen_range(29..100).to_string());
-        sensor_values.insert("cpu_power".to_string(), rng.gen_range(19.0..250.0).to_string());
-        sensor_values.insert("cpu_voltage".to_string(), rng.gen_range(0.0..2.5).to_string());
-        sensor_values.insert("cpu_frequency".to_string(), rng.gen_range(-1..4900).to_string());
-
-        sensor_values.insert("gpu_utilization".to_string(), rng.gen_range(0..100).to_string());
-        sensor_values.insert("gpu_die_temp".to_string(), rng.gen_range(29..100).to_string());
-        sensor_values.insert("gpu_package_temp".to_string(), rng.gen_range(29..100).to_string());
-        sensor_values.insert("gpu_power".to_string(), rng.gen_range(19.0..250.0).to_string());
-        sensor_values.insert("gpu_voltage".to_string(), rng.gen_range(0.0..2.5).to_string());
-        sensor_values.insert("gpu_frequency".to_string(), rng.gen_range(-1..3000).to_string());
-
-        let sensor_request = json!({
-            "user_id": 4711,
-            "topic": "cats",
-            "message": sensor_values
-        });
-
-//        let sensor_request = "\"user_id\": 4711, \"topic\": \"cats\", \"message\": {}";
-
-        let request_url = "http://127.0.0.1:8000/publish";
-
-        println!("Sending: {}", sensor_request);
-        let response = blocking::Client::new()
-            .post(request_url)
-            .header("Content-Type", "application/json")
-            .json(&sensor_request)
-            .send();
-
-        println!("Result: {:?}", response);
-
-        thread::sleep(Duration::from_secs(1));
-    }
-}
-
 fn main() {
     #[link(name="libray", kind="dylib")]
-    let args: Vec<String> = env::args().collect();
-    println!("Arguments: {:?}", args);
-    if args.len() > 1 && args[1] == "generate" {
-        generate_sensor_values();
-        return
-    }
+
+    let matches = App::new("Sensor Panel")
+        .args(&[Arg::new("configpath")
+            .short('c')
+            .long("configfile")
+            .takes_value(true)])
+        .get_matches();
+
+    let config_path = match matches.value_of("configpath") {
+        None => "config.toml",
+        Some(s) => s
+    };
+
+    let config = read_config(config_path);
 
     let (mut rl, thread) = raylib::init()
         .size(1024, 600)
@@ -157,10 +123,10 @@ fn main() {
 
     rl.set_target_fps(60);
 
-    let fonts = load_fonts(&mut rl, &thread);
-    let textures = load_textures(&mut rl, &thread);
+    let fonts = load_fonts(&mut rl, &thread, &config.resources);
+    let textures = load_textures(&mut rl, &thread, &config.resources);
 
-    let value_receiver = ws_client_setup();
+    let value_receiver = ws_client_setup(&config);
 
     let mut data = Vec::new();
     let historical_reports_count = 500;

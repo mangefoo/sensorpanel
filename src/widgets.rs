@@ -26,8 +26,8 @@ pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     d.draw_text_ex(get_font(fonts, "calibri_50_bold"), "CPU", Vector2::new(xf + 10.0, yf + 10.0), 50.0, 0.0, Color::WHITE);
     d.draw_text_ex(get_font(fonts, "calibri_20"), &*format!("{:.2} W", cpu_power), Vector2::new(xf + 110.0, yf + 21.0), 20.0, 0.0, Color::WHITE);
 
-    draw_temperature_gauge(&mut d, x + 200, y + 5, cpu_die_temp as i32, get_font(fonts, "calibri_20"), get_font(fonts, "calibri_12"));
-    draw_temperature_gauge(&mut d, x + 275, y + 5, cpu_package_temp as i32, get_font(fonts, "calibri_20"), get_font(fonts, "calibri_12"));
+    draw_temperature_gauge(&mut d, x + 200, y + 5, cpu_die_temp as i32, get_font(fonts, "calibri_20"), get_font(fonts, "calibri_13"));
+    draw_temperature_gauge(&mut d, x + 275, y + 5, cpu_package_temp as i32, get_font(fonts, "calibri_20"), get_font(fonts, "calibri_13"));
     d.draw_text_ex(get_font(fonts, "calibri_30"), &*format!("{} MHz", max_core_frequency), Vector2::new(xf + 340.0, yf + 18.0), 30.0, 0.0, Color::WHITE);
 
     d.draw_text_ex(get_font(fonts, "calibri_25_bold"), "Usage", Vector2::new(xf + 10.0, yf + 65.0), 25.0, 0.0, Color::WHITE);
@@ -65,8 +65,8 @@ pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     d.draw_text_ex(get_font(fonts, "calibri_20"), &*format!("{:.2} W", gpu_power), Vector2::new(xf + 110.0,  yf + 12.0), 20.0, 0.0, Color::WHITE);
     d.draw_text_ex(get_font(fonts, "calibri_20"), &*format!("{:.2} V", gpu_voltage), Vector2::new(xf + 110.0, yf + 30.0), 20.0, 0.0, Color::WHITE);
 
-    draw_temperature_gauge(&mut d, x + 200, y + 5, gpu_die_temp as i32, get_font(fonts, "calibri_20"), get_font(fonts, "calibri_12"));
-    draw_temperature_gauge(&mut d, x + 275, y + 5, gpu_package_temp as i32, get_font(fonts, "calibri_20"), get_font(fonts, "calibri_12"));
+    draw_temperature_gauge(&mut d, x + 200, y + 5, gpu_die_temp as i32, get_font(fonts, "calibri_20"), get_font(fonts, "calibri_13"));
+    draw_temperature_gauge(&mut d, x + 275, y + 5, gpu_package_temp as i32, get_font(fonts, "calibri_20"), get_font(fonts, "calibri_13"));
 
     d.draw_text_ex(get_font(fonts, "calibri_30"), &*format!("{} MHz", gpu_frequency), Vector2::new(xf + 340.0, yf + 3.0), 30.0, 0.0, Color::WHITE);
     d.draw_text_ex(get_font(fonts, "calibri_30"), &*format!("{} FPS", gpu_fps), Vector2::new(xf + 340.0, yf + 32.0), 30.0, 0.0, Color::WHITE);
@@ -157,14 +157,14 @@ pub fn draw_hdd_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
         if drive_name.is_some() {
             let label = format!("Free: {} GB / {} GB", drive_free / 1000000000, drive_total / 1000000000);
             d.draw_text_ex(get_font(fonts, "calibri_20"), drive_name.unwrap_or(&"?".to_string()), Vector2::new((x + 3) as f32, (y + (i - 1) * 30 + 2) as f32 + 50 as f32), 20.0, 0.0, Color::WHITE);
-            draw_meter_bar_with_label(&mut d, x + 25, y + (i - 1) * 30 + 50, 438, 23, (((drive_total - drive_free) as f64 / drive_total as f64) * 100.0 as f64) as i32, 100, (Color::VIOLET, Color::BLACK), fonts, label, 130.0, Color::WHITE);
+            draw_meter_bar_with_label(&mut d, x + 25, y + (i - 1) * 30 + 50, 446, 23, (((drive_total - drive_free) as f64 / drive_total as f64) * 100.0 as f64) as i32, 100, (Color::VIOLET, Color::BLACK), fonts, label, 130.0, Color::WHITE);
         }
     }
 }
 
 pub fn draw_time_panel(d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>) {
-    let date = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
-    d.draw_text_ex(get_font(fonts, "calibri_20"), &date, Vector2::new(x as f32, y as f32), 20.0, 0.0, Color::WHITE);
+    let date = Local::now().format("%H:%M:%S").to_string();
+    d.draw_text_ex(get_font(fonts, "calibri_30"), &date, Vector2::new(x as f32, y as f32), 30.0, 0.0, Color::WHITE);
 }
 
 pub fn draw_graph_grid(d: &mut &mut RaylibDrawHandle, x: i32, y: i32) {

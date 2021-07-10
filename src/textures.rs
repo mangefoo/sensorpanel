@@ -6,10 +6,10 @@ pub fn get_texture<'a>(textures: &'a HashMap<String, Texture2D>, name: &str) -> 
     textures.get(name).expect("Missing texture")
 }
 
-pub fn load_textures(rl: &mut RaylibHandle, thread: &RaylibThread) -> HashMap<String, Texture2D> {
+pub fn load_textures(rl: &mut RaylibHandle, thread: &RaylibThread, resources: &String) -> HashMap<String, Texture2D> {
     let mut textures = HashMap::<String, Texture2D>::new();
 
-    let windows_background = rl.load_texture(&thread, "resources/windows_7_1024.png")
+    let windows_background = rl.load_texture(&thread, &format!("{}/{}", resources, "/images/windows_7_1024.png"))
         .expect("Failed to get background");
 
     textures.insert("windows_background".to_string(), windows_background);

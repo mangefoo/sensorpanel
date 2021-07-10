@@ -1,0 +1,2 @@
+#resources = '/home/pi/sensorpanel/resources'
+relay_host = 'sensor-relay.int.mindphaser.se'
