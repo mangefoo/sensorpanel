@@ -19,12 +19,15 @@ pub fn load_fonts(rl: &mut RaylibHandle, thread: &RaylibThread) -> HashMap<Strin
         .expect("Failed to get font");
     let calibri_bold_40 = rl.load_font_ex(&thread, "resources/calibrib.ttf", 40, FontLoadEx::Default(0))
         .expect("Failed to get font");
+    let calibri_12 = rl.load_font_ex(&thread, "resources/calibri.ttf", 12, FontLoadEx::Default(0))
+        .expect("Failed to get font");
 
     fonts.insert("calibrib".to_string(), calibrib);
     fonts.insert("calibrib2".to_string(), calibrib2);
     fonts.insert("calibri".to_string(), calibri);
     fonts.insert("calibril".to_string(), calibril);
     fonts.insert("calibri_bold_40".to_string(), calibri_bold_40);
+    fonts.insert("calibri_12".to_string(), calibri_12);
 
     return fonts;
 }

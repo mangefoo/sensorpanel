@@ -26,8 +26,8 @@ pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     d.draw_text_ex(get_font(fonts, "calibrib"), "CPU", Vector2::new(xf + 10.0, yf + 10.0), 50.0, 0.0, Color::WHITE);
     d.draw_text_ex(get_font(fonts, "calibri"), &*format!("{:.2} W", cpu_power), Vector2::new(xf + 110.0, yf + 21.0), 20.0, 0.0, Color::WHITE);
 
-    draw_gauge(&mut d, x + 200, y + 5, cpu_die_temp as i32, get_font(fonts, "calibri"));
-    draw_gauge(&mut d, x + 275, y + 5, cpu_package_temp as i32, get_font(fonts,"calibri"));
+    draw_temperature_gauge(&mut d, x + 200, y + 5, cpu_die_temp as i32, get_font(fonts, "calibri"), get_font(fonts, "calibri_12"));
+    draw_temperature_gauge(&mut d, x + 275, y + 5, cpu_package_temp as i32, get_font(fonts, "calibri"), get_font(fonts, "calibri_12"));
     d.draw_text_ex(get_font(fonts, "calibril"), &*format!("{} MHz", max_core_frequency), Vector2::new(xf + 340.0, yf + 18.0), 30.0, 0.0, Color::WHITE);
 
     d.draw_text_ex(get_font(fonts, "calibrib2"), "Usage", Vector2::new(xf + 10.0, yf + 65.0), 25.0, 0.0, Color::WHITE);
@@ -91,8 +91,8 @@ pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     d.draw_text_ex(get_font(fonts, "calibri"), &*format!("{:.2} W", gpu_power), Vector2::new(xf + 110.0,  yf + 12.0), 20.0, 0.0, Color::WHITE);
     d.draw_text_ex(get_font(fonts, "calibri"), &*format!("{:.2} V", gpu_voltage), Vector2::new(xf + 110.0, yf + 30.0), 20.0, 0.0, Color::WHITE);
 
-    draw_gauge(&mut d, x + 200, y + 5, gpu_die_temp as i32, get_font(fonts, "calibri"));
-    draw_gauge(&mut d, x + 275, y + 5, gpu_package_temp as i32, get_font(fonts,"calibri"));
+    draw_temperature_gauge(&mut d, x + 200, y + 5, gpu_die_temp as i32, get_font(fonts, "calibri"), get_font(fonts, "calibri_12"));
+    draw_temperature_gauge(&mut d, x + 275, y + 5, gpu_package_temp as i32, get_font(fonts, "calibri"), get_font(fonts, "calibri_12"));
 
     d.draw_text_ex(get_font(fonts, "calibril"), &*format!("{} MHz", gpu_frequency), Vector2::new(xf + 340.0, yf + 3.0), 30.0, 0.0, Color::WHITE);
     d.draw_text_ex(get_font(fonts, "calibril"), &*format!("{} FPS", gpu_fps), Vector2::new(xf + 340.0, yf + 32.0), 30.0, 0.0, Color::WHITE);
@@ -194,7 +194,7 @@ pub fn draw_meter_bar_with_label(d: &mut &mut RaylibDrawHandle, x: i32, y: i32, 
     d.draw_text_ex(get_font(fonts, "calibri"), &label, Vector2::new(label_pos + x as f32, y as f32 + 3.0), 20.0, 0.0, label_color);
 }
 
-pub fn draw_gauge(d: &mut RaylibDrawHandle, x: i32, y: i32, value: i32, font: &Font) {
+pub fn draw_temperature_gauge(d: &mut RaylibDrawHandle, x: i32, y: i32, value: i32, font: &Font, font2: &Font) {
     d.draw_circle(x + 25, y + 25, 25.0, Color::LIGHTGRAY);
     d.draw_circle(x + 25, y + 25, 23.0, Color::BLACK);
 
@@ -209,4 +209,8 @@ pub fn draw_gauge(d: &mut RaylibDrawHandle, x: i32, y: i32, value: i32, font: &F
     d.draw_circle(x + 25, y + 25, 13.0, Color::BLACK);
 
     d.draw_text_ex(font, &value.to_string(), Vector2::new(x as f32 + 15.0, y as f32 + 17.0), 20.0, 0.0, Color::WHITE);
+
+    let degree_color = Color::new(220, 220, 220, 255);
+    d.draw_circle_lines(x + 22, y + 37, 2.05, degree_color);
+    d.draw_text_ex(font2, "C", Vector2::new(x as f32 + 25.0, y as f32 + 34.0), 13.0, 0.0, degree_color);
 }
