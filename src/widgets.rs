@@ -19,9 +19,9 @@ pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
         .unwrap_or(0);
 
     let cpu_utilization: f32 = latest_data.values.get("cpu_utilization").unwrap_or(&"0".to_string()).parse().unwrap();
-    let cpu_die_temp: f32 = latest_data.values.get("cpu_die_temp").or(Some(&"0".to_string())).expect("No cpu_die_temp value").parse().unwrap();
-    let cpu_package_temp: f32 = latest_data.values.get("cpu_package_temp").or(Some(&"0".to_string())).expect("No cpu_package_temp value").parse().unwrap();
-    let cpu_power: f32 = latest_data.values.get("cpu_power").or(Some(&"0".to_string())).expect("No cpu_power value").parse().unwrap();
+    let cpu_die_temp: f32 = latest_data.values.get("cpu_die_temp").unwrap_or(&"0".to_string()).parse().unwrap();
+    let cpu_package_temp: f32 = latest_data.values.get("cpu_package_temp").unwrap_or(&"0".to_string()).parse().unwrap();
+    let cpu_power: f32 = latest_data.values.get("cpu_power").unwrap_or(&"0".to_string()).parse().unwrap();
 
     d.draw_text_ex(get_font(fonts, "calibrib"), "CPU", Vector2::new(xf + 10.0, yf + 10.0), 50.0, 0.0, Color::WHITE);
     d.draw_text_ex(get_font(fonts, "calibri"), &*format!("{:.2} W", cpu_power), Vector2::new(xf + 110.0, yf + 21.0), 20.0, 0.0, Color::WHITE);
@@ -46,32 +46,6 @@ pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     draw_graph(&mut d, x + 10, y + 100, usage_graph_values, Color::GREEN);
 }
 
-pub fn draw_core_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<SensorData>) {
-
-    let gradient_color_1 = Color::new(0, 200, 0, 255);
-    let gradient_color_2 = Color::new(0, 40, 0, 255);
-
-    let latest_data = &data[data.len() - 1];
-
-    d.draw_text_ex(get_font(fonts, "calibrib"), "CPU Cores", Vector2::new(x as f32, y as f32 + 10.0), 50.0, 0.0, Color::WHITE);
-    for core in 1..9 {
-        let core_load: f32 = latest_data.values.get(&*format!("cpu_core_load_{}", core)).unwrap_or(&"0".to_string()).parse().unwrap();
-        let core_frequency: f32 = latest_data.values.get(&*format!("cpu_core_frequency_{}", core)).unwrap_or(&"0".to_string()).parse().unwrap();
-        let core_y = y + (core - 1) * 28 + 65;
-        let core_frequency = format!("{:.0} MHz", core_frequency);
-        d.draw_text_ex(get_font(fonts, "calibri"), &*format!("#{}", core), Vector2::new(x as f32, core_y as f32), 20.0, 0.0, Color::WHITE);
-        draw_meter_bar_with_label(&mut d, x + 30, core_y, 195, 23, core_load as i32, 100, (gradient_color_1, gradient_color_2), fonts, core_frequency, 60.0, Color::WHITE);
-    }
-    for core in 9..17 {
-        let core_load: f32 = latest_data.values.get(&*format!("cpu_core_load_{}", core)).unwrap_or(&"0".to_string()).parse().unwrap();
-        let core_frequency: f32 = latest_data.values.get(&*format!("cpu_core_frequency_{}", core)).unwrap_or(&"0".to_string()).parse().unwrap();
-        let core_y = y + (core - 9) * 28 + 65;
-        let core_frequency = format!("{:.0} MHz", core_frequency);
-        d.draw_text_ex(get_font(fonts, "calibri"), &*format!("#{}", core), Vector2::new(x as f32 + 240.0, core_y as f32), 20.0, 0.0, Color::WHITE);
-        draw_meter_bar_with_label(&mut d, x + 275, core_y, 195, 23, core_load as i32, 100, (gradient_color_1, gradient_color_2), fonts, core_frequency, 60.0, Color::WHITE);
-    }
-}
-
 pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<SensorData>) {
 
     let xf = x as f32;
@@ -79,13 +53,13 @@ pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
 
     let latest_data = &data[data.len() - 1];
 
-    let gpu_utilization: f32 = latest_data.values.get("gpu_utilization").or(Some(&"0".to_string())).expect("No gpu_utilization value").parse().unwrap();
-    let gpu_die_temp: f32 = latest_data.values.get("gpu_die_temp").or(Some(&"0".to_string())).expect("No gpu_die_temp value").parse().unwrap();
-    let gpu_package_temp: f32 = latest_data.values.get("gpu_package_temp").or(Some(&"0".to_string())).expect("No gpu_package_temp value").parse().unwrap();
-    let gpu_power: f32 = latest_data.values.get("gpu_power").or(Some(&"0".to_string())).expect("No gpu_power value").parse().unwrap();
-    let gpu_voltage: f32 = latest_data.values.get("gpu_voltage").or(Some(&"0".to_string())).expect("No gpu_voltage value").parse().unwrap();
-    let gpu_frequency: f32 = latest_data.values.get("gpu_frequency").or(Some(&"0".to_string())).expect("No gpu_frequency value").parse().unwrap();
-    let gpu_fps: f32 = latest_data.values.get("gpu_fps").or(Some(&"0".to_string())).expect("No gpu_fps value").parse().unwrap();
+    let gpu_utilization: f32 = latest_data.values.get("gpu_utilization").unwrap_or(&"0".to_string()).parse().unwrap();
+    let gpu_die_temp: f32 = latest_data.values.get("gpu_die_temp").unwrap_or(&"0".to_string()).parse().unwrap();
+    let gpu_package_temp: f32 = latest_data.values.get("gpu_package_temp").unwrap_or(&"0".to_string()).parse().unwrap();
+    let gpu_power: f32 = latest_data.values.get("gpu_power").unwrap_or(&"0".to_string()).parse().unwrap();
+    let gpu_voltage: f32 = latest_data.values.get("gpu_voltage").unwrap_or(&"0".to_string()).parse().unwrap();
+    let gpu_frequency: f32 = latest_data.values.get("gpu_frequency").unwrap_or(&"0".to_string()).parse().unwrap();
+    let gpu_fps: f32 = latest_data.values.get("gpu_fps").unwrap_or(&"0".to_string()).parse().unwrap();
 
     d.draw_text_ex(get_font(fonts, "calibrib"), "GPU", Vector2::new(xf + 10.0, yf + 10.0), 50.0, 0.0, Color::WHITE);
     d.draw_text_ex(get_font(fonts, "calibri"), &*format!("{:.2} W", gpu_power), Vector2::new(xf + 110.0,  yf + 12.0), 20.0, 0.0, Color::WHITE);
@@ -118,8 +92,8 @@ pub fn draw_mem_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     let yf = y as f32;
     let latest_data = &data[data.len() - 1];
 
-    let mem_used : f32 = latest_data.values.get("mem_used").or(Some(&"0".to_string())).expect("No mem_used value").parse().unwrap();
-    let mem_available : f32 = latest_data.values.get("mem_available").or(Some(&"0".to_string())).expect("No mem_used value").parse().unwrap();
+    let mem_used : f32 = latest_data.values.get("mem_used").unwrap_or(&"0".to_string()).parse().unwrap();
+    let mem_available : f32 = latest_data.values.get("mem_available").unwrap_or(&"0".to_string()).parse().unwrap();
     let mem_used_percent = mem_used / (mem_used + mem_available);
 
     d.draw_text_ex(get_font(fonts, "calibri_bold_40"), "Mem", Vector2::new(xf + 10.0, yf + 10.0), 40.0, 0.0, Color::WHITE);
@@ -140,6 +114,52 @@ pub fn draw_mem_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
         .collect();
 
     draw_graph(&mut d, x + 10, y + 100, utilizations, Color::BLUE);
+}
+
+pub fn draw_core_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<SensorData>) {
+
+    let gradient_color_1 = Color::new(0, 200, 0, 255);
+    let gradient_color_2 = Color::new(0, 40, 0, 255);
+
+    let latest_data = &data[data.len() - 1];
+
+    d.draw_text_ex(get_font(fonts, "calibrib"), "CPU Cores", Vector2::new(x as f32, y as f32 + 10.0), 50.0, 0.0, Color::WHITE);
+    for core in 1..9 {
+        let core_load: f32 = latest_data.values.get(&*format!("cpu_core_load_{}", core)).unwrap_or(&"0".to_string()).parse().unwrap();
+        let core_frequency: f32 = latest_data.values.get(&*format!("cpu_core_frequency_{}", core)).unwrap_or(&"0".to_string()).parse().unwrap();
+        let core_y = y + (core - 1) * 28 + 65;
+        let core_frequency = format!("{:.0} MHz", core_frequency);
+        d.draw_text_ex(get_font(fonts, "calibri"), &*format!("#{}", core), Vector2::new(x as f32, core_y as f32), 20.0, 0.0, Color::WHITE);
+        draw_meter_bar_with_label(&mut d, x + 30, core_y, 195, 23, core_load as i32, 100, (gradient_color_1, gradient_color_2), fonts, core_frequency, 60.0, Color::WHITE);
+    }
+    for core in 9..17 {
+        let core_load: f32 = latest_data.values.get(&*format!("cpu_core_load_{}", core)).unwrap_or(&"0".to_string()).parse().unwrap();
+        let core_frequency: f32 = latest_data.values.get(&*format!("cpu_core_frequency_{}", core)).unwrap_or(&"0".to_string()).parse().unwrap();
+        let core_y = y + (core - 9) * 28 + 65;
+        let core_frequency = format!("{:.0} MHz", core_frequency);
+        d.draw_text_ex(get_font(fonts, "calibri"), &*format!("#{}", core), Vector2::new(x as f32 + 240.0, core_y as f32), 20.0, 0.0, Color::WHITE);
+        draw_meter_bar_with_label(&mut d, x + 275, core_y, 195, 23, core_load as i32, 100, (gradient_color_1, gradient_color_2), fonts, core_frequency, 60.0, Color::WHITE);
+    }
+}
+
+pub fn draw_hdd_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<SensorData>)
+{
+    let latest_data = &data[data.len() - 1];
+
+    d.draw_text_ex(get_font(fonts, "calibrib"), "HDD", Vector2::new(x as f32, y as f32), 50.0, 0.0, Color::WHITE);
+
+    for i in 1..=6 {
+        let drive_name = latest_data.values.get(&format!("hdd_drive_name_{}", i));
+        //let drive_label = latest_data.values.get(&format!("hdd_drive_label_{}", i));
+        let drive_total:i64 = latest_data.values.get(&format!("hdd_drive_total_bytes_{}", i)).unwrap_or(&"0".to_string()).parse().unwrap();
+        let drive_free:i64 = latest_data.values.get(&format!("hdd_drive_free_bytes_{}", i)).unwrap_or(&"0".to_string()).parse().unwrap();
+
+        if drive_name.is_some() {
+            let label = format!("Free: {} GB / {} GB", drive_free / 1000000000, drive_total / 1000000000);
+            d.draw_text_ex(get_font(fonts, "calibri"), drive_name.unwrap_or(&"?".to_string()), Vector2::new((x + 3) as f32, (y + (i - 1) * 30 + 2) as f32 + 50 as f32), 20.0, 0.0, Color::WHITE);
+            draw_meter_bar_with_label(&mut d, x + 25, y + (i - 1) * 30 + 50, 438, 23, (((drive_total - drive_free) as f64 / drive_total as f64) * 100.0 as f64) as i32, 100, (Color::DARKPURPLE, Color::BLACK), fonts, label, 130.0, Color::WHITE);
+        }
+    }
 }
 
 pub fn draw_time_panel(d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>) {
