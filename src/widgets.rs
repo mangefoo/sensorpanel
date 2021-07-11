@@ -4,11 +4,11 @@ use crate::fonts::get_font;
 use crate::data::SensorData;
 use chrono::Local;
 
-pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<SensorData>) {
+pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>) {
 
     let xf = x as f32;
     let yf = y as f32;
-    let latest_data = &data[data.len() - 1];
+    let latest_data = data.last().unwrap();
 
     let max_core_frequency = (1..=16).into_iter()
         .map(|core_number| format!("cpu_core_frequency_{}", core_number))
@@ -46,12 +46,12 @@ pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     draw_graph(&mut d, x + 10, y + 100, usage_graph_values, Color::GREEN);
 }
 
-pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<SensorData>) {
+pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>) {
 
     let xf = x as f32;
     let yf = y as f32;
 
-    let latest_data = &data[data.len() - 1];
+    let latest_data = data.last().unwrap();
 
     let gpu_utilization: f32 = latest_data.values.get("gpu_utilization").unwrap_or(&"0".to_string()).parse().unwrap();
     let gpu_die_temp: f32 = latest_data.values.get("gpu_die_temp").unwrap_or(&"0".to_string()).parse().unwrap();
@@ -86,11 +86,11 @@ pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     draw_graph(&mut d, x + 10, y + 100, usage_graph_values, Color::RED);
 }
 
-pub fn draw_mem_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<SensorData>) {
+pub fn draw_mem_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>) {
 
     let xf = x as f32;
     let yf = y as f32;
-    let latest_data = &data[data.len() - 1];
+    let latest_data = data.last().unwrap();
 
     let mem_used : f32 = latest_data.values.get("mem_used").unwrap_or(&"0".to_string()).parse().unwrap();
     let mem_available : f32 = latest_data.values.get("mem_available").unwrap_or(&"0".to_string()).parse().unwrap();
@@ -116,12 +116,12 @@ pub fn draw_mem_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     draw_graph(&mut d, x + 10, y + 100, utilizations, Color::BLUE);
 }
 
-pub fn draw_core_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<SensorData>) {
+pub fn draw_core_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>) {
 
     let gradient_color_1 = Color::new(0, 200, 0, 255);
     let gradient_color_2 = Color::new(0, 40, 0, 255);
 
-    let latest_data = &data[data.len() - 1];
+    let latest_data = data.last().unwrap();
 
     d.draw_text_ex(get_font(fonts, "calibri_50_bold"), "CPU Cores", Vector2::new(x as f32, y as f32 + 10.0), 50.0, 0.0, Color::WHITE);
     for core in 1..9 {
@@ -142,9 +142,9 @@ pub fn draw_core_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Has
     }
 }
 
-pub fn draw_hdd_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<SensorData>)
+pub fn draw_hdd_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>)
 {
-    let latest_data = &data[data.len() - 1];
+    let latest_data = data.last().unwrap();
 
     d.draw_text_ex(get_font(fonts, "calibri_50_bold"), "HDD", Vector2::new(x as f32, y as f32), 50.0, 0.0, Color::WHITE);
 
@@ -162,9 +162,21 @@ pub fn draw_hdd_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     }
 }
 
-pub fn draw_time_panel(d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>) {
+pub fn draw_time_panel(d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>) {
+
+    let latest_data = data.last();
+
+    if latest_data.is_some() {
+        let office_temp: f32 = latest_data.unwrap().values.get("hue_temperature").unwrap_or(&"0".to_string()).parse().unwrap();
+
+        let temp = format!("{:.1}   C", office_temp);
+        d.draw_text_ex(get_font(fonts, "calibri_30"), &temp, Vector2::new((x + 265) as f32, y as f32), 30.0, 0.0, Color::WHITE);
+        d.draw_circle(x + 329, y + 7, 4.0, Color::WHITE);
+        d.draw_circle(x + 329, y + 7, 2.0, Color::new(1,0,240, 255));
+    }
+
     let date = Local::now().format("%H:%M:%S").to_string();
-    d.draw_text_ex(get_font(fonts, "calibri_30"), &date, Vector2::new(x as f32, y as f32), 30.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri_30"), &date, Vector2::new((x + 375) as f32, y as f32), 30.0, 0.0, Color::WHITE);
 }
 
 pub fn draw_graph_grid(d: &mut &mut RaylibDrawHandle, x: i32, y: i32) {

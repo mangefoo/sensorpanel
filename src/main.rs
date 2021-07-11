@@ -134,17 +134,14 @@ fn main() {
     while !rl.window_should_close() {
         match value_receiver.try_recv() {
             Ok(report) => {
-                data.push(SensorData { values: report.sensors.clone() });
+                println!("Got data: {:?}", report);
+                data.push(SensorData { reporter: report.reporter.clone(), values: report.sensors.clone() });
                 if data.len() > historical_reports_count {
                     data.remove(0);
                 }
             }
             Err(_) => {}
         };
-
-        if data.len() == 0 {
-            continue;
-        }
 
         let mut d = rl.begin_drawing(&thread);
         draw_windows_panel(&fonts, &textures, &mut d, &data);
