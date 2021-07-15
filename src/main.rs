@@ -139,10 +139,11 @@ fn main() {
 
 fn ws_receiver_setup(config: &Config, data: &Arc<Mutex<Vec<SensorData>>>) {
     let thread_data = data.clone();
+
+    let value_receiver = ws_client_setup(&config);
+
     thread::spawn(move || {
         let historical_reports_count = 500;
-
-        let value_receiver = ws_client_setup(&config);
 
         loop {
             let data = Arc::clone(&thread_data);
