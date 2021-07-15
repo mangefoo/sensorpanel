@@ -9,7 +9,7 @@ use reqwest::{blocking, Url};
 use std::{thread};
 use tungstenite::{connect};
 use std::sync::mpsc::{Sender, Receiver};
-use std::sync::mpsc;
+use std::sync::{mpsc, Arc, Mutex};
 use crate::config::{read_config, Config};
 use clap::{App, Arg};
 
@@ -126,25 +126,40 @@ fn main() {
     let fonts = load_fonts(&mut rl, &thread, &config.resources);
     let textures = load_textures(&mut rl, &thread, &config.resources);
 
-    let value_receiver = ws_client_setup(&config);
+    let data = Arc::new(Mutex::new(Vec::new()));
 
-    let mut data = Vec::new();
-    let historical_reports_count = 500;
+    ws_receiver_setup(&config, &data);
 
     while !rl.window_should_close() {
-        match value_receiver.try_recv() {
-            Ok(report) => {
-                println!("Got data: {:?}", report);
-                data.push(SensorData { reporter: report.reporter.clone(), values: report.sensors.clone() });
-                if data.len() > historical_reports_count {
-                    data.remove(0);
-                }
-            }
-            Err(_) => {}
-        };
 
         let mut d = rl.begin_drawing(&thread);
-        draw_windows_panel(&fonts, &textures, &mut d, &data);
+        draw_windows_panel(&fonts, &textures, &mut d, &(*data.lock().unwrap()));
     }
+}
+
+fn ws_receiver_setup(config: &Config, data: &Arc<Mutex<Vec<SensorData>>>) {
+    let thread_data = data.clone();
+    thread::spawn(move || {
+        let historical_reports_count = 500;
+
+        let value_receiver = ws_client_setup(&config);
+
+        loop {
+            let data = Arc::clone(&thread_data);
+            match value_receiver.recv() {
+                Ok(report) => {
+                    println!("Got data: {:?}", report);
+                    let mut locked_data = data.lock().unwrap();
+                    locked_data.push(SensorData { reporter: report.reporter.clone(), values: report.sensors.clone() });
+                    if locked_data.len() > historical_reports_count {
+                        locked_data.remove(0);
+                    }
+                }
+                Err(ee) => {
+                    println!("Got error {}", ee);
+                }
+            }
+        }
+    });
 }
 
