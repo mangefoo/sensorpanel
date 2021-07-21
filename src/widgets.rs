@@ -14,7 +14,8 @@ pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
         .map(|core_number| format!("cpu_core_frequency_{}", core_number))
         .map(|core_key| latest_data.values.get(&core_key))
         .filter(|core_value| core_value.is_some())
-        .map(|core_value| core_value.unwrap().parse::<f32>().unwrap() as i32)
+        .map(|core_value| core_value.unwrap().parse::<f32>().unwrap() as f32)
+        .map(|float_val| format!("{:.0}", float_val).parse::<i32>().unwrap() as i32)
         .max()
         .unwrap_or(0);
 
