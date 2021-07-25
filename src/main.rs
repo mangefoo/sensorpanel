@@ -139,8 +139,10 @@ fn main() {
 
     while !rl.window_should_close() {
 
-        let mut d = rl.begin_drawing(&thread);
-        draw_windows_panel(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
+        if state.lock().unwrap().screen_on {
+            let mut d = rl.begin_drawing(&thread);
+            draw_windows_panel(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
+        }
     }
 }
 
