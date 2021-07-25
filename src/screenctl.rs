@@ -7,6 +7,7 @@ pub trait ScreenControl {
 }
 
 const TVSERVICE_PATH: &str = "/usr/bin/tvservice";
+const UHUBCTL_PATH: &str = "/home/pi/devel/uhubctl/uhubctl";
 
 struct TvServiceScreenControl {}
 
@@ -17,6 +18,11 @@ impl ScreenControl for TvServiceScreenControl {
             .status()
             .expect("Failed to turn on screen with tvservice");
 
+        Command::new(UHUBCTL_PATH)
+            .args(&["-l", "1-1", "-a", "1", "-r", "100"])
+            .status()
+            .expect("Failed to turn on screen with uhubctl");
+
         return true;
     }
 
@@ -25,6 +31,11 @@ impl ScreenControl for TvServiceScreenControl {
             .arg("-o")
             .status()
             .expect("Failed to turn on screen with tvservice");
+
+        Command::new(UHUBCTL_PATH)
+            .args(&["-l", "1-1", "-a", "0", "-r", "100"])
+            .status()
+            .expect("Failed to turn on screen with uhubctl");
 
         return true;
     }
