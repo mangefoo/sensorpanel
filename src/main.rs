@@ -222,6 +222,7 @@ fn handle_presence(presence: &String, state: &mut MutexGuard<State>) {
         state.presence.present = Present::PENDING;
         state.presence.last_switch_to_false = SystemTime::now();
     } else if present {
+        println!("Presence reset to YES");
         state.presence.present = Present::YES;
     }
 }
