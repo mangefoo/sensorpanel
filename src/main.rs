@@ -13,6 +13,7 @@ use std::sync::{mpsc, Arc, Mutex, MutexGuard};
 use crate::config::{read_config, Config};
 use clap::{App, Arg};
 use crate::screenctl::get_screen_control;
+use std::time::Duration;
 
 mod config;
 mod fonts;
@@ -142,6 +143,8 @@ fn main() {
         if state.lock().unwrap().screen_on {
             let mut d = rl.begin_drawing(&thread);
             draw_windows_panel(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
+        } else {
+            thread::sleep(Duration::from_secs(1));
         }
     }
 }
