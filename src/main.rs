@@ -1,7 +1,7 @@
 use crate::fonts::load_fonts;
 use crate::windows_panel::draw_windows_panel;
 use crate::textures::load_textures;
-use crate::data::{SensorData};
+use crate::data::{SensorData, State, ScreenState};
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use serde_json::json;
@@ -9,9 +9,10 @@ use reqwest::{blocking, Url};
 use std::{thread};
 use tungstenite::{connect};
 use std::sync::mpsc::{Sender, Receiver};
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{mpsc, Arc, Mutex, MutexGuard};
 use crate::config::{read_config, Config};
 use clap::{App, Arg};
+use crate::screenctl::get_screen_control;
 
 mod config;
 mod fonts;
@@ -19,6 +20,7 @@ mod textures;
 mod widgets;
 mod windows_panel;
 mod data;
+mod screenctl;
 
 #[derive(Deserialize, Debug)]
 struct RegisterResponse {
@@ -76,7 +78,7 @@ fn ws_read_loop(url: String, value_sender: Sender<SensorReport>) {
 
 fn ws_register_client(relay_host: &String) -> Result<String, reqwest::Error> {
     let register_body = json!({
-        "topics": ["sensors"],
+        "topics": ["sensors", "actions"],
     });
 
     let request_url = format!("http://{}/register", relay_host);
@@ -126,35 +128,35 @@ fn main() {
     let fonts = load_fonts(&mut rl, &thread, &config.resources);
     let textures = load_textures(&mut rl, &thread, &config.resources);
 
-    let data = Arc::new(Mutex::new(Vec::new()));
+    let state = Arc::new(Mutex::new(State {
+        sensor_data: Vec::new(),
+        screen_on: true,
+        screen_state: ScreenState::AUTO,
+        presence: true
+    }));
 
-    ws_receiver_setup(&config, &data);
+    ws_receiver_setup(&config, &state);
 
     while !rl.window_should_close() {
 
         let mut d = rl.begin_drawing(&thread);
-        draw_windows_panel(&fonts, &textures, &mut d, &(*data.lock().unwrap()));
+        draw_windows_panel(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
     }
 }
 
-fn ws_receiver_setup(config: &Config, data: &Arc<Mutex<Vec<SensorData>>>) {
-    let thread_data = data.clone();
+fn ws_receiver_setup(config: &Config, state: &Arc<Mutex<State>>) {
+    let thread_state = state.clone();
 
     let value_receiver = ws_client_setup(&config);
 
     thread::spawn(move || {
-        let historical_reports_count = 500;
-
         loop {
-            let data = Arc::clone(&thread_data);
+            let state = Arc::clone(&thread_state);
             match value_receiver.recv() {
-                Ok(report) => {
-                    println!("Got data: {:?}", report);
-                    let mut locked_data = data.lock().unwrap();
-                    locked_data.push(SensorData { reporter: report.reporter.clone(), values: report.sensors.clone() });
-                    if locked_data.len() > historical_reports_count {
-                        locked_data.remove(0);
-                    }
+                Ok(event) => {
+                    println!("Got event: {:?}", event);
+                    let mut locked_state = state.lock().unwrap();
+                    handle_event(event, &mut locked_state)
                 }
                 Err(ee) => {
                     println!("Got error {}", ee);
@@ -164,3 +166,50 @@ fn ws_receiver_setup(config: &Config, data: &Arc<Mutex<Vec<SensorData>>>) {
     });
 }
 
+fn handle_event(sensor_report: SensorReport, state: &mut MutexGuard<State>) {
+    match sensor_report.topic.as_str() {
+        "actions" => {
+            handle_action(sensor_report, state);
+        }
+        "sensors" => {
+            handle_sensor(sensor_report, state)
+        }
+        _ => {}
+    }
+}
+
+fn handle_sensor(event: SensorReport, state: &mut MutexGuard<State>) {
+
+    let historical_reports_count = 500;
+
+    state.sensor_data.push(SensorData { reporter: event.reporter.clone(), values: event.sensors.clone() });
+    if state.sensor_data.len() > historical_reports_count {
+        state.sensor_data.remove(0);
+    }
+}
+
+fn handle_action(sensor_report: SensorReport, state: &mut MutexGuard<State>) {
+    if sensor_report.sensors.contains_key("toggle_screen") {
+        let screen_was_on = state.screen_on;
+
+        state.screen_state = match state.screen_state {
+            ScreenState::ON => ScreenState::OFF,
+            ScreenState::OFF => ScreenState::ON,
+            ScreenState::AUTO => if state.screen_on { ScreenState::OFF } else { ScreenState::ON }
+        };
+
+        match state.screen_state {
+            ScreenState::ON => state.screen_on = true,
+            ScreenState::OFF => state.screen_on = false,
+            _ => {}
+        }
+
+        println!("Current screen state: {:?}, screen on: {}", state.screen_state, state.screen_on);
+
+        if !state.screen_on && screen_was_on {
+            get_screen_control().turn_off();
+        } else if state.screen_on && !screen_was_on {
+            get_screen_control().turn_on();
+        }
+    }
+}
