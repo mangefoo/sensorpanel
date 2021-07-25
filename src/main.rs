@@ -1,7 +1,7 @@
 use crate::fonts::load_fonts;
 use crate::windows_panel::draw_windows_panel;
 use crate::textures::load_textures;
-use crate::data::{SensorData, State, ScreenState};
+use crate::data::{SensorData, State, ScreenState, Present, PresenceData};
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use serde_json::json;
@@ -13,7 +13,7 @@ use std::sync::{mpsc, Arc, Mutex, MutexGuard};
 use crate::config::{read_config, Config};
 use clap::{App, Arg};
 use crate::screenctl::get_screen_control;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
 mod config;
 mod fonts;
@@ -133,7 +133,10 @@ fn main() {
         sensor_data: Vec::new(),
         screen_on: true,
         screen_state: ScreenState::AUTO,
-        presence: true
+        presence: PresenceData {
+            present: Present::YES,
+            last_switch_to_false: SystemTime::now()
+        }
     }));
 
     ws_receiver_setup(&config, &state);
@@ -190,6 +193,34 @@ fn handle_sensor(event: SensorReport, state: &mut MutexGuard<State>) {
     state.sensor_data.push(SensorData { reporter: event.reporter.clone(), values: event.sensors.clone() });
     if state.sensor_data.len() > historical_reports_count {
         state.sensor_data.remove(0);
+    }
+
+    if event.sensors.contains_key("hue_presence") {
+        handle_presence(event.sensors.get("hue_presence").unwrap(), state);
+    }
+}
+
+const PRESENCE_DURATION_THRESHOLD: u64 = 10;
+
+fn handle_presence(presence: &String, state: &mut MutexGuard<State>) {
+    let present = if presence == "true" { true } else { false };
+    let current_time = SystemTime::now();
+    let duration_since_switch_to_false = current_time.duration_since(state.presence.last_switch_to_false).unwrap();
+
+    if present && state.presence.present == Present::NO {
+        println!("Presence set to YES");
+        get_screen_control().turn_on();
+        state.screen_on = true;
+        state.presence.present = Present::YES;
+    } else if !present && state.presence.present == Present::PENDING && duration_since_switch_to_false.as_secs() > PRESENCE_DURATION_THRESHOLD {
+        println!("Presence set to NO");
+        get_screen_control().turn_off();
+        state.screen_on = false;
+        state.presence.present = Present::NO;
+    } else if !present && state.presence.present == Present::YES {
+        println!("Presence set to PENDING");
+        state.presence.present = Present::PENDING;
+        state.presence.last_switch_to_false = SystemTime::now();
     }
 }
 

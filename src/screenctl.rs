@@ -20,10 +20,12 @@ impl ScreenControl for TvServiceScreenControl {
                 .status()
                 .expect("Failed to turn on screen with tvservice");
 
-            Command::new(UHUBCTL_PATH)
-                .args(&["-l", "1-1", "-a", "1", "-r", "100"])
-                .status()
-                .expect("Failed to turn on screen with uhubctl");
+            if Path::new(UHUBCTL_PATH).exists() {
+                Command::new(UHUBCTL_PATH)
+                    .args(&["-l", "1-1", "-a", "1", "-r", "100"])
+                    .status()
+                    .expect("Failed to turn on screen with uhubctl");
+            }
         });
 
         return true;
@@ -36,10 +38,12 @@ impl ScreenControl for TvServiceScreenControl {
                 .status()
                 .expect("Failed to turn on screen with tvservice");
 
-            Command::new(UHUBCTL_PATH)
-                .args(&["-l", "1-1", "-a", "0", "-r", "100"])
-                .status()
-                .expect("Failed to turn on screen with uhubctl");
+            if Path::new(UHUBCTL_PATH).exists() {
+                Command::new(UHUBCTL_PATH)
+                    .args(&["-l", "1-1", "-a", "0", "-r", "100"])
+                    .status()
+                    .expect("Failed to turn on screen with uhubctl");
+            }
         });
 
         return true;
