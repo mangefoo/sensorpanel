@@ -14,12 +14,14 @@ use crate::config::{read_config, Config};
 use clap::{App, Arg};
 use crate::screenctl::get_screen_control;
 use std::time::{Duration, SystemTime};
+use crate::pending_panel::draw_pending_panel;
 
 mod config;
 mod fonts;
 mod textures;
 mod widgets;
 mod windows_panel;
+mod pending_panel;
 mod data;
 mod screenctl;
 
@@ -145,7 +147,16 @@ fn main() {
 
         if state.lock().unwrap().screen_on {
             let mut d = rl.begin_drawing(&thread);
-            draw_windows_panel(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
+
+            let has_windows_data = state.lock().unwrap().sensor_data.iter()
+                .filter(|d| { d.reporter == "windows-sensor-agent"} )
+                .count() > 0;
+
+            if has_windows_data {
+                draw_windows_panel(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
+            } else {
+                draw_pending_panel(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
+            }
         } else {
             thread::sleep(Duration::from_secs(1));
         }
@@ -162,7 +173,6 @@ fn ws_receiver_setup(config: &Config, state: &Arc<Mutex<State>>) {
             let state = Arc::clone(&thread_state);
             match value_receiver.recv() {
                 Ok(event) => {
-                    println!("Got event: {:?}", event);
                     let mut locked_state = state.lock().unwrap();
                     handle_event(event, &mut locked_state)
                 }
