@@ -15,13 +15,16 @@ use clap::{App, Arg};
 use crate::screenctl::get_screen_control;
 use std::time::{Duration, SystemTime};
 use crate::pending_panel::draw_pending_panel;
+use crate::linux_panel::draw_linux_panel;
 
 mod config;
 mod fonts;
 mod textures;
-mod widgets;
+mod windows_widgets;
+mod linux_widgets;
 mod windows_panel;
 mod pending_panel;
+mod linux_panel;
 mod data;
 mod screenctl;
 
@@ -152,8 +155,14 @@ fn main() {
                 .filter(|d| { d.reporter == "windows-sensor-agent"} )
                 .count() > 0;
 
+            let has_linux_data = state.lock().unwrap().sensor_data.iter()
+                .filter(|d| { d.reporter == "linux-sensor-agent"} )
+                .count() > 0;
+
             if has_windows_data {
                 draw_windows_panel(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
+            } else if has_linux_data {
+                draw_linux_panel(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
             } else {
                 draw_pending_panel(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
             }
@@ -210,7 +219,7 @@ fn handle_sensor(event: SensorReport, state: &mut MutexGuard<State>) {
     }
 }
 
-const PRESENCE_DURATION_THRESHOLD: u64 = 10;
+const PRESENCE_DURATION_THRESHOLD: u64 = 300;
 
 fn handle_presence(presence: &String, state: &mut MutexGuard<State>) {
     let present = if presence == "true" { true } else { false };

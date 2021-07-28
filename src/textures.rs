@@ -13,9 +13,12 @@ pub fn load_textures(rl: &mut RaylibHandle, thread: &RaylibThread, resources: &S
         .expect("Failed to get background");
     let pending_background= rl.load_texture(&thread, &format!("{}/{}", resources, "/images/PM5644-1024x600.png"))
         .expect("Failed to get background");
+    let linux_background= rl.load_texture(&thread, &format!("{}/{}", resources, "/images/ubuntu_1024x600.png"))
+        .expect("Failed to get background");
 
     textures.insert("windows_background".to_string(), windows_background);
     textures.insert("pending_background".to_string(), pending_background);
+    textures.insert("linux_background".to_string(), linux_background);
 
     return textures;
 }

@@ -1,7 +1,6 @@
 use raylib::core::texture::Texture2D;
 use raylib::core::drawing::{RaylibDrawHandle, RaylibDraw};
 use raylib::color::Color;
-use crate::widgets::{draw_cpu_panel, draw_gpu_panel, draw_mem_panel, draw_core_panel, draw_time_panel, draw_hdd_panel};
 use raylib::core::text::Font;
 use std::collections::HashMap;
 use crate::textures::get_texture;
@@ -10,7 +9,7 @@ use crate::fonts::get_font;
 use raylib::prelude::Vector2;
 use chrono::Local;
 
-pub fn draw_pending_panel(fonts: &HashMap<String, Font>, textures: &HashMap<String, Texture2D>, mut d: &mut RaylibDrawHandle, data: &Vec<SensorData>) {
+pub fn draw_pending_panel(fonts: &HashMap<String, Font>, textures: &HashMap<String, Texture2D>, d: &mut RaylibDrawHandle, data: &Vec<SensorData>) {
 
     let background = get_texture(textures, "pending_background");
 
