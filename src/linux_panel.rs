@@ -1,7 +1,7 @@
 use raylib::core::texture::Texture2D;
 use raylib::core::drawing::{RaylibDrawHandle, RaylibDraw};
 use raylib::color::Color;
-use crate::linux_widgets::{draw_cpu_panel, draw_gpu_panel, draw_mem_panel, draw_core_panel, draw_time_panel, draw_hdd_panel};
+use crate::linux_widgets::{draw_cpu_panel, draw_gpu_panel, draw_mem_panel, draw_core_panel, draw_time_panel};
 use raylib::core::text::Font;
 use std::collections::HashMap;
 use crate::textures::get_texture;

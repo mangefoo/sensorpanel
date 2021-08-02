@@ -156,12 +156,14 @@ pub fn draw_hdd_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
         let drive_free:i64 = latest_data.values.get(&format!("hdd_drive_free_bytes_{}", i)).unwrap_or(&"0".to_string()).parse().unwrap();
 
         if drive_name.is_some() {
-            let label = format!("Free: {} GB / {} GB", drive_free / 1000000000, drive_total / 1000000000);
+            let label = format!("Free: {} GB / {} GB", bytes_to_gigabytes(drive_free), bytes_to_gigabytes(drive_total));
             d.draw_text_ex(get_font(fonts, "calibri_20"), drive_name.unwrap_or(&"?".to_string()), Vector2::new((x + 3) as f32, (y + (i - 1) * 30 + 2) as f32 + 50 as f32), 20.0, 0.0, Color::WHITE);
             draw_meter_bar_with_label(&mut d, x + 25, y + (i - 1) * 30 + 50, 446, 23, (((drive_total - drive_free) as f64 / drive_total as f64) * 100.0 as f64) as i32, 100, (Color::VIOLET, Color::BLACK), fonts, label, 130.0, Color::WHITE);
         }
     }
 }
+
+fn bytes_to_gigabytes(bytes: i64) -> i64 { bytes / 1024 / 1024 / 1024 }
 
 pub fn draw_time_panel(d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>) {
 
