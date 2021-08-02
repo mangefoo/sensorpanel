@@ -1,0 +1,27 @@
+[Unit]
+Description=Sensor Panel service
+ConditionPathExists=/home/pi/devel/sensorpanel/target/debug/sensorpanel
+Requires=network-online.target
+ 
+[Service]
+Type=simple
+User=root
+Group=root
+LimitNOFILE=1024
+
+Restart=on-failure
+RestartSec=10
+startLimitIntervalSec=60
+
+WorkingDirectory=/home/pi/devel/sensorpanel
+ExecStartPre=/bin/sh -c 'until ping -c1 192.168.18.1; do sleep 1; done;'
+ExecStart=/home/pi/devel/sensorpanel/target/debug/sensorpanel
+
+PermissionsStartOnly=true
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=sensorpanel
+ 
+[Install]
+WantedBy=multi-user.target
+
