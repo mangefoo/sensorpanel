@@ -3,17 +3,17 @@ use crate::windows_panel::draw_windows_panel;
 use crate::textures::load_textures;
 use crate::data::{SensorData, State, ScreenState, Present, PresenceData};
 use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
+use serde::{Serialize, Deserialize, Deserializer};
 use serde_json::json;
 use reqwest::{blocking, Url};
-use std::{thread};
+use std::{thread, process};
 use tungstenite::{connect};
 use std::sync::mpsc::{Sender, Receiver};
 use std::sync::{mpsc, Arc, Mutex, MutexGuard};
 use crate::config::{read_config, Config};
 use clap::{App, Arg};
 use crate::screenctl::get_screen_control;
-use std::time::{Duration, SystemTime};
+use std::time::{Duration, SystemTime, Instant};
 use crate::pending_panel::draw_pending_panel;
 use crate::linux_panel::draw_linux_panel;
 
@@ -38,6 +38,19 @@ pub struct SensorReport {
     reporter: String,
     topic: String,
     sensors: HashMap<String, String>,
+    #[serde(default = "current_instant", deserialize_with="set_to_current_instant", skip_serializing)]
+    received: Instant
+}
+
+pub fn set_to_current_instant<'de, D>(_: D) -> Result<Instant, D::Error>
+    where
+        D: Deserializer<'de>,
+{
+    Ok(Instant::now())
+}
+
+pub fn current_instant() -> Instant {
+    Instant::now()
 }
 
 fn ws_client_setup(config: &Config) -> Receiver<SensorReport> {
@@ -150,13 +163,16 @@ fn main() {
 
         if state.lock().unwrap().screen_on {
             let mut d = rl.begin_drawing(&thread);
+            let now = Instant::now();
 
             let has_windows_data = state.lock().unwrap().sensor_data.iter()
                 .filter(|d| { d.reporter == "windows-sensor-agent"} )
+                .filter(|d| { now - d.received < Duration::from_secs(10) })
                 .count() > 0;
 
             let has_linux_data = state.lock().unwrap().sensor_data.iter()
                 .filter(|d| { d.reporter == "linux-sensor-agent"} )
+                .filter(|d| { now - d.received < Duration::from_secs(10) })
                 .count() > 0;
 
             if has_windows_data {
@@ -187,6 +203,7 @@ fn ws_receiver_setup(config: &Config, state: &Arc<Mutex<State>>) {
                 }
                 Err(ee) => {
                     println!("Got error {}", ee);
+                    process::exit(1);
                 }
             }
         }
@@ -209,7 +226,7 @@ fn handle_sensor(event: SensorReport, state: &mut MutexGuard<State>) {
 
     let historical_reports_count = 500;
 
-    state.sensor_data.push(SensorData { reporter: event.reporter.clone(), values: event.sensors.clone() });
+    state.sensor_data.push(SensorData { reporter: event.reporter.clone(), values: event.sensors.clone(), received: event.received.clone() });
     if state.sensor_data.len() > historical_reports_count {
         state.sensor_data.remove(0);
     }

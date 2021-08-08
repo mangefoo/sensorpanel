@@ -1,10 +1,11 @@
 use std::collections::HashMap;
-use std::time::SystemTime;
+use std::time::{SystemTime, Instant};
 
 #[derive(Clone, Debug)]
 pub struct SensorData {
     pub reporter: String,
     pub values: HashMap<String, String>,
+    pub received: Instant,
 }
 
 #[derive(Clone, Debug)]
