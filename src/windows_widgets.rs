@@ -118,8 +118,8 @@ pub fn draw_net_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
 
             let received_label = format!("{:.2} Mbit/s", bytes_to_mbit(received_bytes_per_sec));
             let sent_label = format!("{:.2} Mbit/s", bytes_to_mbit(sent_bytes_per_sec));
-            draw_meter_bar_with_label(&mut d, x + 10, y + 65, 225, 23, bytes_to_mbit(received_bytes_per_sec) as i32, 100, (receive_gradient_color_1, receive_gradient_color_2), fonts, received_label, 60.0, Color::WHITE);
-            draw_meter_bar_with_label(&mut d, x + 245, y + 65, 225, 23, bytes_to_mbit(sent_bytes_per_sec) as i32, 100, (send_gradient_color_1, send_gradient_color_2), fonts, sent_label, 60.0, Color::WHITE);
+            draw_meter_bar_with_label(&mut d, x + 10, y + 65, 225, 23, bytes_to_mbit(received_bytes_per_sec) as i32, 100, (receive_gradient_color_1, receive_gradient_color_2), fonts, received_label, 70.0, Color::WHITE);
+            draw_meter_bar_with_label(&mut d, x + 245, y + 65, 225, 23, bytes_to_mbit(sent_bytes_per_sec) as i32, 100, (send_gradient_color_1, send_gradient_color_2), fonts, sent_label, 70.0, Color::WHITE);
 
             let received_graph_values = &data.iter()
                 .map(|d| d.values.get(&network_received_key))
