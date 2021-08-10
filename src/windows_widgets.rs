@@ -87,6 +87,62 @@ pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     draw_graph(&mut d, x + 10, y + 100, usage_graph_values, Color::RED);
 }
 
+pub fn draw_net_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>) {
+
+    let xf = x as f32;
+    let yf = y as f32;
+
+    let latest_data = data.last().unwrap();
+    let receive_gradient_color_1 = Color::new(200, 150, 0, 255);
+    let receive_gradient_color_2 = Color::new(40, 25, 0, 255);
+    let send_gradient_color_1 = Color::new(0, 200, 200, 255);
+    let send_gradient_color_2 = Color::new(0, 40, 40, 255);
+    let cyan = Color::new(0, 200, 200, 255);
+
+    d.draw_text_ex(get_font(fonts, "calibri_50_bold"), "Network", Vector2::new(xf + 10.0, yf + 10.0), 50.0, 0.0, Color::WHITE);
+    d.draw_rectangle(x + 210, y + 18, 10, 10, receive_gradient_color_1);
+    d.draw_text_ex(get_font(fonts, "calibri_20"), "Receive", Vector2::new(xf + 230.0, yf + 14.0), 20.0, 0.0, Color::WHITE);
+    d.draw_rectangle(x + 210, y + 38, 10, 10, send_gradient_color_1);
+    d.draw_text_ex(get_font(fonts, "calibri_20"), "Send", Vector2::new(xf + 230.0, yf + 34.0), 20.0, 0.0, Color::WHITE);
+
+    draw_graph_grid(&mut d, x + 10, y + 100);
+
+    for index in 1..=10 {
+        let network_name_key = format!("network_name_{}", index);
+        if latest_data.values.contains_key(&network_name_key) && latest_data.values.get(&network_name_key).unwrap() == "ethernet" {
+            let network_received_key = format!("network_received_bytes_{}", index);
+            let network_sent_key = format!("network_sent_bytes_{}", index);
+            let received_bytes_per_sec: i64 = latest_data.values.get(&network_received_key).unwrap_or(&"0".to_string()).parse().unwrap();
+            let sent_bytes_per_sec: i64 = latest_data.values.get(&network_sent_key).unwrap_or(&"0".to_string()).parse().unwrap();
+
+
+            let received_label = format!("{:.2} Mbit/s", bytes_to_mbit(received_bytes_per_sec));
+            let sent_label = format!("{:.2} Mbit/s", bytes_to_mbit(sent_bytes_per_sec));
+            draw_meter_bar_with_label(&mut d, x + 10, y + 65, 225, 23, bytes_to_mbit(received_bytes_per_sec) as i32, 100, (receive_gradient_color_1, receive_gradient_color_2), fonts, received_label, 70.0, Color::WHITE);
+            draw_meter_bar_with_label(&mut d, x + 245, y + 65, 225, 23, bytes_to_mbit(sent_bytes_per_sec) as i32, 100, (send_gradient_color_1, send_gradient_color_2), fonts, sent_label, 70.0, Color::WHITE);
+
+            let received_graph_values = &data.iter()
+                .map(|d| d.values.get(&network_received_key))
+                .filter(|util| util.is_some())
+                .map(|v| (bytes_to_mbit(v.unwrap().parse::<i64>().unwrap()) as f32))
+                .map(|v| if v > 100.0 { 100.0 } else { v })
+                .collect();
+
+            let sent_graph_values = &data.iter()
+                .map(|d| d.values.get(&network_sent_key))
+                .filter(|util| util.is_some())
+                .map(|v| (bytes_to_mbit(v.unwrap().parse::<i64>().unwrap()) as f32))
+                .map(|v| if v > 100.0 { 100.0 } else { v })
+                .collect();
+
+            draw_graph(&mut d, x + 10, y + 100, sent_graph_values, cyan);
+            draw_graph(&mut d, x + 10, y + 100, received_graph_values, Color::ORANGE);
+        }
+    }
+}
+
+fn bytes_to_mbit(bytes: i64) -> f32 { (bytes * 8) as f32 / 1000000.0 }
+
 pub fn draw_mem_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>) {
 
     let xf = x as f32;
@@ -97,24 +153,14 @@ pub fn draw_mem_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     let mem_available : f32 = latest_data.values.get("mem_available").unwrap_or(&"0".to_string()).parse().unwrap();
     let mem_used_percent = mem_used / (mem_used + mem_available);
 
-    d.draw_text_ex(get_font(fonts, "calibri_40_bold"), "Mem", Vector2::new(xf + 10.0, yf + 10.0), 40.0, 0.0, Color::WHITE);
-    d.draw_text_ex(get_font(fonts, "calibri_20"), &*format!("Available: {:.2} GB", mem_available), Vector2::new(xf + 110.0,  yf + 12.0), 20.0, 0.0, Color::WHITE);
-    d.draw_text_ex(get_font(fonts, "calibri_20"), &*format!("Used: {:.2} GB", mem_used), Vector2::new(xf + 141.0,  yf + 30.0), 20.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri_50_bold"), "Memory", Vector2::new(xf + 10.0, yf + 10.0), 50.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri_20"), &*format!("Available: {:.2} GB", mem_available), Vector2::new(xf + 200.0,  yf + 14.0), 20.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri_20"), &*format!("Used: {:.2} GB", mem_used), Vector2::new(xf + 200.0,  yf + 32.0), 20.0, 0.0, Color::WHITE);
 
     let gradient_color_1 = Color::new(50, 50, 255, 255);
     let gradient_color_2 = Color::new(10, 10, 50, 255);
     d.draw_text_ex(get_font(fonts, "calibri_25_bold"), "Usage", Vector2::new(xf + 10.0, yf + 65.0), 25.0, 0.0, Color::WHITE);
-    draw_meter_bar(&mut d, x + 80, y + 65, 390, 23, (mem_used_percent * 100.0) as i32, 100, (gradient_color_1, gradient_color_2), fonts);
-
-    draw_graph_grid(&mut d, x + 10, y + 100);
-    let utilizations = &data.iter()
-        .map(|d| (d.values.get("mem_used"), d.values.get("mem_available")))
-        .filter(|mem_vals| mem_vals.0.is_some() && mem_vals.1.is_some())
-        .map(|v| (v.0.unwrap().parse::<f32>().unwrap(), v.1.unwrap().parse::<f32>().unwrap()))
-        .map(|v| v.0 / (v.0 + v.1) * 100.0)
-        .collect();
-
-    draw_graph(&mut d, x + 10, y + 100, utilizations, Color::BLUE);
+    draw_meter_bar(&mut d, x + 80, y + 65, 400, 23, (mem_used_percent * 100.0) as i32, 100, (gradient_color_1, gradient_color_2), fonts);
 }
 
 pub fn draw_core_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>) {
@@ -147,18 +193,22 @@ pub fn draw_hdd_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
 {
     let latest_data = data.last().unwrap();
 
-    d.draw_text_ex(get_font(fonts, "calibri_50_bold"), "HDD", Vector2::new(x as f32, y as f32), 50.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri_50_bold"), "Disk", Vector2::new(x as f32, y as f32), 50.0, 0.0, Color::WHITE);
 
     for i in 1..=6 {
         let drive_name = latest_data.values.get(&format!("hdd_drive_name_{}", i));
-        //let drive_label = latest_data.values.get(&format!("hdd_drive_label_{}", i));
         let drive_total:i64 = latest_data.values.get(&format!("hdd_drive_total_bytes_{}", i)).unwrap_or(&"0".to_string()).parse().unwrap();
         let drive_free:i64 = latest_data.values.get(&format!("hdd_drive_free_bytes_{}", i)).unwrap_or(&"0".to_string()).parse().unwrap();
 
         if drive_name.is_some() {
-            let label = format!("Free: {} GB / {} GB", bytes_to_gigabytes(drive_free), bytes_to_gigabytes(drive_total));
-            d.draw_text_ex(get_font(fonts, "calibri_20"), drive_name.unwrap_or(&"?".to_string()), Vector2::new((x + 3) as f32, (y + (i - 1) * 30 + 2) as f32 + 50 as f32), 20.0, 0.0, Color::WHITE);
-            draw_meter_bar_with_label(&mut d, x + 25, y + (i - 1) * 30 + 50, 446, 23, (((drive_total - drive_free) as f64 / drive_total as f64) * 100.0 as f64) as i32, 100, (Color::VIOLET, Color::BLACK), fonts, label, 130.0, Color::WHITE);
+            let label = format!("{} GB / {} GB", bytes_to_gigabytes(drive_free), bytes_to_gigabytes(drive_total));
+
+            let calculated_x = x + 245 * ((i - 1) % 2);
+            let calculated_y = y + ((i - 1) / 2 - 1) * 30 + 80;
+
+            d.draw_text_ex(get_font(fonts, "calibri_20"), drive_name.unwrap_or(&"?".to_string()), Vector2::new((calculated_x + 3) as f32, (calculated_y + 3) as f32), 20.0, 0.0, Color::WHITE);
+
+            draw_meter_bar_with_label(&mut d, calculated_x + 25, calculated_y, 200, 23, (((drive_total - drive_free) as f64 / drive_total as f64) * 100.0 as f64) as i32, 100, (Color::VIOLET, Color::BLACK), fonts, label, 40.0, Color::WHITE);
         }
     }
 }
@@ -223,7 +273,8 @@ pub fn draw_meter_bar_with_label(d: &mut &mut RaylibDrawHandle, x: i32, y: i32, 
     d.draw_rectangle(x, y, width, height, Color::DARKGRAY);
     d.draw_rectangle(x + 1, y + 1, width - 2, height - 2, Color::BLACK);
 
-    let bar_width = width * value / max_value;
+    let value_with_ceiling = if value > max_value { max_value } else { value };
+    let bar_width = width * value_with_ceiling / max_value;
     d.draw_rectangle_gradient_v(x + 1, y + 1, bar_width, height - 2, color.0, color.1);
 
     d.draw_text_ex(get_font(fonts, "calibri_20"), &label, Vector2::new(label_pos + x as f32, y as f32 + 3.0), 20.0, 0.0, label_color);
