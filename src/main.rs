@@ -154,11 +154,12 @@ fn handle_event(sensor_report: SensorReport, state: &State, config: &Config) -> 
 fn handle_sensor(event: SensorReport, state: &State, config: &Config) -> State {
     let historical_reports_count = 500;
 
+    let mut new_state = state.clone();
+
     if event.sensors.contains_key("hue_presence") {
-        return handle_presence(event.sensors.get("hue_presence").unwrap(), state, config);
+        new_state = handle_presence(event.sensors.get("hue_presence").unwrap(), state, config);
     }
 
-    let mut new_state = state.clone();
     new_state.sensor_data.push(SensorData { reporter: event.reporter.clone(), values: event.sensors.clone(), received: event.received.clone() });
     if new_state.sensor_data.len() > historical_reports_count {
         new_state.sensor_data.remove(0);
