@@ -4,18 +4,21 @@ use crate::textures::load_textures;
 use crate::data::{SensorData, State, ScreenState, Present, PresenceData};
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize, Deserializer};
-use serde_json::json;
 use reqwest::{blocking, Url};
 use std::{thread, process};
 use tungstenite::{connect};
 use std::sync::mpsc::{Sender, Receiver};
-use std::sync::{mpsc, Arc, Mutex, MutexGuard};
+use std::sync::{mpsc, Arc, Mutex};
 use crate::config::{read_config, Config};
 use clap::{App, Arg};
 use crate::screenctl::get_screen_control;
 use std::time::{Duration, SystemTime, Instant};
 use crate::pending_panel::draw_pending_panel;
 use crate::linux_panel::draw_linux_panel;
+use crate::state::{update_presence, update_state_presence, toggle_screen_state, StateExt};
+use raylib::core::drawing::RaylibDraw;
+use raylib::color::Color;
+use crate::websocket::{SensorReport, ws_client_setup};
 
 mod config;
 mod fonts;
@@ -27,98 +30,8 @@ mod pending_panel;
 mod linux_panel;
 mod data;
 mod screenctl;
-
-#[derive(Deserialize, Debug)]
-struct RegisterResponse {
-    id: String,
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct SensorReport {
-    reporter: String,
-    topic: String,
-    sensors: HashMap<String, String>,
-    #[serde(default = "current_instant", deserialize_with="set_to_current_instant", skip_serializing)]
-    received: Instant
-}
-
-pub fn set_to_current_instant<'de, D>(_: D) -> Result<Instant, D::Error>
-    where
-        D: Deserializer<'de>,
-{
-    Ok(Instant::now())
-}
-
-pub fn current_instant() -> Instant {
-    Instant::now()
-}
-
-fn ws_client_setup(config: &Config) -> Receiver<SensorReport> {
-    let (tx, rx): (Sender<SensorReport>, Receiver<SensorReport>) = mpsc::channel();
-    let thread_tx = tx.clone();
-    let relay_host= config.relay_host.clone();
-    let thread_fn = move || {
-        let id = match ws_register_client(&relay_host) {
-            Err(error) => panic!("Failed to get WS URL: {}", error),
-            Ok(url) => url
-        };
-
-        println!("Got WS ID: {}", id);
-
-        ws_read_loop(format!("ws://{}/ws/{}", relay_host, id), thread_tx);
-    };
-
-    thread::spawn(thread_fn);
-
-    return rx;
-}
-
-fn ws_read_loop(url: String, value_sender: Sender<SensorReport>) {
-    let (mut socket, response) =
-        connect(Url::parse(&url).unwrap()).expect("Can't connect");
-
-    println!("Connected to the server");
-    println!("Response HTTP code: {}", response.status());
-    println!("Response contains the following headers:");
-    for (ref header, _value) in response.headers() {
-        println!("* {}", header);
-    }
-
-    loop {
-        let msg = socket.read_message().expect("Error reading message");
-        let report: SensorReport = serde_json::from_str(msg.to_text().unwrap()).unwrap();
-        let result = value_sender.send(report);
-        match result {
-            Err(error) => { println!("Failed to send request: {}", error)}
-            _ => {}
-        }
-    }
-}
-
-fn ws_register_client(relay_host: &String) -> Result<String, reqwest::Error> {
-    let register_body = json!({
-        "topics": ["sensors", "actions"],
-    });
-
-    let request_url = format!("http://{}/register", relay_host);
-
-    let response = blocking::Client::new()
-        .post(request_url)
-        .json(&register_body)
-        .send();
-
-    let response = match response {
-        Err(error) => panic!("Request failed: {}", error),
-        Ok(response) => { println!("Request OK"); response }
-    };
-
-    let register_response: RegisterResponse = match response.json() {
-        Err(error) => panic!("Parse json failed: {:?}", error),
-        Ok(json) => json
-    };
-
-    Ok(register_response.id)
-}
+mod state;
+mod websocket;
 
 fn main() {
     #[link(name="libray", kind="dylib")]
@@ -157,7 +70,7 @@ fn main() {
         }
     }));
 
-    ws_receiver_setup(&config, &state);
+    ws_receiver_setup(config.clone(), &state);
 
     while !rl.window_should_close() {
 
@@ -183,12 +96,17 @@ fn main() {
                 draw_pending_panel(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
             }
         } else {
-            thread::sleep(Duration::from_secs(1));
+            if get_screen_control().should_clear_screen() {
+                let mut d = rl.begin_drawing(&thread);
+                d.clear_background(Color::BLACK);
+            } else {
+                thread::sleep(Duration::from_secs(1));
+            }
         }
     }
 }
 
-fn ws_receiver_setup(config: &Config, state: &Arc<Mutex<State>>) {
+fn ws_receiver_setup(config: Config, state: &Arc<Mutex<State>>) {
     let thread_state = state.clone();
 
     let value_receiver = ws_client_setup(&config);
@@ -199,7 +117,16 @@ fn ws_receiver_setup(config: &Config, state: &Arc<Mutex<State>>) {
             match value_receiver.recv() {
                 Ok(event) => {
                     let mut locked_state = state.lock().unwrap();
-                    handle_event(event, &mut locked_state)
+                    let state = &*locked_state;
+                    let new_state = handle_event(event, state, &config);
+
+                    if !new_state.screen_on && state.screen_on {
+                        get_screen_control().turn_off();
+                    } else if new_state.screen_on && !state.screen_on {
+                        get_screen_control().turn_on();
+                    }
+
+                    new_state.transfer_to(& mut *locked_state);
                 }
                 Err(ee) => {
                     println!("Got error {}", ee);
@@ -210,81 +137,47 @@ fn ws_receiver_setup(config: &Config, state: &Arc<Mutex<State>>) {
     });
 }
 
-fn handle_event(sensor_report: SensorReport, state: &mut MutexGuard<State>) {
-    match sensor_report.topic.as_str() {
+fn handle_event(sensor_report: SensorReport, state: &State, config: &Config) -> State {
+    return match sensor_report.topic.as_str() {
         "actions" => {
-            handle_action(sensor_report, state);
+            handle_action(sensor_report, state)
         }
         "sensors" => {
-            handle_sensor(sensor_report, state)
+            handle_sensor(sensor_report, state, config)
         }
-        _ => {}
+        _ => {
+            state.clone()
+        }
     }
 }
 
-fn handle_sensor(event: SensorReport, state: &mut MutexGuard<State>) {
-
+fn handle_sensor(event: SensorReport, state: &State, config: &Config) -> State {
     let historical_reports_count = 500;
 
-    state.sensor_data.push(SensorData { reporter: event.reporter.clone(), values: event.sensors.clone(), received: event.received.clone() });
-    if state.sensor_data.len() > historical_reports_count {
-        state.sensor_data.remove(0);
-    }
-
     if event.sensors.contains_key("hue_presence") {
-        handle_presence(event.sensors.get("hue_presence").unwrap(), state);
+        return handle_presence(event.sensors.get("hue_presence").unwrap(), state, config);
     }
+
+    let mut new_state = state.clone();
+    new_state.sensor_data.push(SensorData { reporter: event.reporter.clone(), values: event.sensors.clone(), received: event.received.clone() });
+    if new_state.sensor_data.len() > historical_reports_count {
+        new_state.sensor_data.remove(0);
+    }
+
+    return new_state;
 }
 
-const PRESENCE_DURATION_THRESHOLD: u64 = 300;
-
-fn handle_presence(presence: &String, state: &mut MutexGuard<State>) {
+fn handle_presence(presence: &String, state: &State, config: &Config) -> State {
     let present = if presence == "true" { true } else { false };
-    let current_time = SystemTime::now();
-    let duration_since_switch_to_false = current_time.duration_since(state.presence.last_switch_to_false).unwrap();
 
-    if present && state.presence.present == Present::NO {
-        println!("Presence set to YES");
-        get_screen_control().turn_on();
-        state.screen_on = true;
-        state.presence.present = Present::YES;
-    } else if !present && state.presence.present == Present::PENDING && duration_since_switch_to_false.as_secs() > PRESENCE_DURATION_THRESHOLD {
-        println!("Presence set to NO");
-        get_screen_control().turn_off();
-        state.screen_on = false;
-        state.presence.present = Present::NO;
-    } else if !present && state.presence.present == Present::YES {
-        println!("Presence set to PENDING");
-        state.presence.present = Present::PENDING;
-        state.presence.last_switch_to_false = SystemTime::now();
-    } else if present {
-        println!("Presence reset to YES");
-        state.presence.present = Present::YES;
-    }
+    let new_presence = update_presence(present, &state.presence, config.presence_threshold_secs);
+    return update_state_presence(&state, new_presence);
 }
 
-fn handle_action(sensor_report: SensorReport, state: &mut MutexGuard<State>) {
-    if sensor_report.sensors.contains_key("toggle_screen") {
-        let screen_was_on = state.screen_on;
-
-        state.screen_state = match state.screen_state {
-            ScreenState::ON => ScreenState::OFF,
-            ScreenState::OFF => ScreenState::ON,
-            ScreenState::AUTO => if state.screen_on { ScreenState::OFF } else { ScreenState::ON }
-        };
-
-        match state.screen_state {
-            ScreenState::ON => state.screen_on = true,
-            ScreenState::OFF => state.screen_on = false,
-            _ => {}
-        }
-
-        println!("Current screen state: {:?}, screen on: {}", state.screen_state, state.screen_on);
-
-        if !state.screen_on && screen_was_on {
-            get_screen_control().turn_off();
-        } else if state.screen_on && !screen_was_on {
-            get_screen_control().turn_on();
-        }
+fn handle_action(sensor_report: SensorReport, state: &State) -> State {
+    return if sensor_report.sensors.contains_key("toggle_screen") {
+        toggle_screen_state(state)
+    } else {
+        state.clone()
     }
 }
