@@ -5,6 +5,7 @@ use std::thread;
 pub trait ScreenControl {
     fn turn_on(&self) -> bool;
     fn turn_off(&self) -> bool;
+    fn should_clear_screen(&self) -> bool;
 }
 
 const TVSERVICE_PATH: &str = "/usr/bin/tvservice";
@@ -48,11 +49,13 @@ impl ScreenControl for TvServiceScreenControl {
 
         return true;
     }
+
+    fn should_clear_screen(&self) -> bool { false }
 }
 
-struct LoggingScreenControl {}
+struct SoftwareScreenControl {}
 
-impl ScreenControl for LoggingScreenControl {
+impl ScreenControl for SoftwareScreenControl {
     fn turn_on(&self) -> bool {
         println!("Turning on screen");
         return true;
@@ -62,6 +65,8 @@ impl ScreenControl for LoggingScreenControl {
         println!("Turning off screen");
         return true;
     }
+
+    fn should_clear_screen(&self) -> bool { true }
 }
 
 pub fn get_screen_control() -> Box<dyn ScreenControl> {
@@ -69,5 +74,5 @@ pub fn get_screen_control() -> Box<dyn ScreenControl> {
         return Box::new(TvServiceScreenControl{});
     }
 
-    return Box::new(LoggingScreenControl{});
+    return Box::new(SoftwareScreenControl {});
 }

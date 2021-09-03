@@ -8,9 +8,8 @@ pub struct SensorData {
     pub received: Instant,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum ScreenState {
-    ON,
     OFF,
     AUTO
 }
