@@ -32,6 +32,7 @@ pub trait StateExt {
     fn transfer_to(self: Self, _: &mut Self);
     fn update_presence(self: &Self, present: bool, presence_threshold_secs: u32) -> Self;
     fn toggle_screen_state(self: &Self) -> Self;
+    fn init() -> Self;
 }
 
 impl StateExt for State {
@@ -81,16 +82,16 @@ impl StateExt for State {
 
         return new_state;
     }
-}
 
-pub fn init_state() -> State {
-    State {
-        sensor_data: Vec::new(),
-        screen_on: true,
-        screen_state: ScreenState::AUTO,
-        presence: PresenceData {
-            present: Present::YES,
-            last_switch_to_false: SystemTime::now()
+    fn init() -> State {
+        State {
+            sensor_data: Vec::new(),
+            screen_on: true,
+            screen_state: ScreenState::AUTO,
+            presence: PresenceData {
+                present: Present::YES,
+                last_switch_to_false: SystemTime::now()
+            }
         }
     }
 }

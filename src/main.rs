@@ -7,7 +7,7 @@ use crate::config::{read_config, Config};
 use clap::{App, Arg};
 use crate::screenctl::get_screen_control;
 use std::time::{Duration, Instant};
-use crate::state::{StateExt, init_state, State};
+use crate::state::{StateExt, State};
 use raylib::core::drawing::RaylibDraw;
 use raylib::color::Color;
 use crate::websocket::{SensorReport, ws_receiver_loop};
@@ -60,7 +60,7 @@ fn main() {
 
     let fonts = load_fonts(&mut rl, &thread, &config.resources);
     let textures = load_textures(&mut rl, &thread, &config.resources);
-    let state = Arc::new(Mutex::new(init_state()));
+    let state = Arc::new(Mutex::new(State::init()));
 
     ws_receiver_setup(config.clone(), &state);
 
