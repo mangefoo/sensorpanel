@@ -1,5 +1,4 @@
 use crate::fonts::load_fonts;
-use crate::windows_panel::draw_windows_panel;
 use crate::textures::load_textures;
 use crate::data::{SensorData};
 use std::{thread, process};
@@ -8,8 +7,6 @@ use crate::config::{read_config, Config};
 use clap::{App, Arg};
 use crate::screenctl::get_screen_control;
 use std::time::{Duration, Instant};
-use crate::pending_panel::draw_pending_panel;
-use crate::linux_panel::draw_linux_panel;
 use crate::state::{StateExt, init_state, State};
 use raylib::core::drawing::RaylibDraw;
 use raylib::color::Color;
@@ -18,6 +15,10 @@ use raylib::core::texture::Texture2D;
 use std::collections::HashMap;
 use raylib::{RaylibHandle, RaylibThread};
 use raylib::core::text::Font;
+use pending_panel::PendingPanel;
+use crate::windows_panel::WindowsPanel;
+use crate::panel::Panel;
+use crate::linux_panel::LinuxPanel;
 
 mod config;
 mod fonts;
@@ -31,6 +32,7 @@ mod data;
 mod screenctl;
 mod state;
 mod websocket;
+mod panel;
 
 fn main() {
     #[link(name="libray", kind="dylib")]
@@ -83,11 +85,11 @@ fn draw_window(rl: &mut RaylibHandle, thread: &RaylibThread, fonts: &HashMap<Str
             .count() > 0;
 
         if has_windows_data {
-            draw_windows_panel(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
+            WindowsPanel::draw(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
         } else if has_linux_data {
-            draw_linux_panel(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
+            LinuxPanel::draw(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
         } else {
-            draw_pending_panel(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
+            PendingPanel::draw(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
         }
     } else {
         if get_screen_control().should_clear_screen() {

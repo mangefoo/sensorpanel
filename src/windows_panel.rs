@@ -6,30 +6,34 @@ use raylib::core::text::Font;
 use std::collections::HashMap;
 use crate::textures::get_texture;
 use crate::data::SensorData;
+use crate::panel::Panel;
 
-pub fn draw_windows_panel(fonts: &HashMap<String, Font>, textures: &HashMap<String, Texture2D>, mut d: &mut RaylibDrawHandle, data: &Vec<SensorData>) {
+pub(crate) struct WindowsPanel();
 
-    let background = get_texture(textures, "windows_background");
+impl Panel for WindowsPanel {
+    fn draw(fonts: &HashMap<String, Font>, textures: &HashMap<String, Texture2D>, mut d: &mut RaylibDrawHandle, data: &Vec<SensorData>) {
+        let background = get_texture(textures, "windows_background");
 
-    d.draw_texture(&background, 0, 0, Color::WHITE);
-    d.clear_background(Color::WHITE);
+        d.draw_texture(&background, 0, 0, Color::WHITE);
+        d.clear_background(Color::WHITE);
 
-    let windows_data = data.iter()
-        .filter(|d| { d.reporter == "windows-sensor-agent"} )
-        .collect::<Vec<&SensorData>>();
+        let windows_data = data.iter()
+            .filter(|d| { d.reporter == "windows-sensor-agent" })
+            .collect::<Vec<&SensorData>>();
 
-    let hue_data = data.iter()
-        .filter(|d| { d.reporter == "hue-sensor-agent"} )
-        .collect::<Vec<&SensorData>>();
+        let hue_data = data.iter()
+            .filter(|d| { d.reporter == "hue-sensor-agent" })
+            .collect::<Vec<&SensorData>>();
 
-    if !windows_data.is_empty() {
-        draw_cpu_panel(&mut d, 10, 5, &fonts, &windows_data);
-        draw_gpu_panel(&mut d, 10, 207, &fonts, &windows_data);
-        draw_net_panel(&mut d, 10, 409, &fonts, &windows_data);
-        draw_mem_panel(&mut d, 520, 320, &fonts, &windows_data);
-        draw_core_panel(&mut d, 530, 5, &fonts, &windows_data);
-        draw_hdd_panel(&mut d, 530, 430, &fonts, &windows_data);
+        if !windows_data.is_empty() {
+            draw_cpu_panel(&mut d, 10, 5, &fonts, &windows_data);
+            draw_gpu_panel(&mut d, 10, 207, &fonts, &windows_data);
+            draw_net_panel(&mut d, 10, 409, &fonts, &windows_data);
+            draw_mem_panel(&mut d, 520, 320, &fonts, &windows_data);
+            draw_core_panel(&mut d, 530, 5, &fonts, &windows_data);
+            draw_hdd_panel(&mut d, 530, 430, &fonts, &windows_data);
+        }
+
+        draw_time_panel(&mut d, 530, 560, &fonts, &hue_data);
     }
-
-    draw_time_panel(&mut d, 530, 560, &fonts, &hue_data);
 }
