@@ -1,24 +1,23 @@
 use crate::fonts::load_fonts;
 use crate::windows_panel::draw_windows_panel;
 use crate::textures::load_textures;
-use crate::data::{SensorData, State, ScreenState, Present, PresenceData};
-use std::collections::HashMap;
-use serde::{Serialize, Deserialize, Deserializer};
-use reqwest::{blocking, Url};
+use crate::data::{SensorData};
 use std::{thread, process};
-use tungstenite::{connect};
-use std::sync::mpsc::{Sender, Receiver};
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{Arc, Mutex};
 use crate::config::{read_config, Config};
 use clap::{App, Arg};
 use crate::screenctl::get_screen_control;
-use std::time::{Duration, SystemTime, Instant};
+use std::time::{Duration, Instant};
 use crate::pending_panel::draw_pending_panel;
 use crate::linux_panel::draw_linux_panel;
-use crate::state::{update_presence, update_state_presence, toggle_screen_state, StateExt};
+use crate::state::{StateExt, init_state, State};
 use raylib::core::drawing::RaylibDraw;
 use raylib::color::Color;
-use crate::websocket::{SensorReport, ws_client_setup};
+use crate::websocket::{SensorReport, ws_receiver_loop};
+use raylib::core::texture::Texture2D;
+use std::collections::HashMap;
+use raylib::{RaylibHandle, RaylibThread};
+use raylib::core::text::Font;
 
 mod config;
 mod fonts;
@@ -59,81 +58,62 @@ fn main() {
 
     let fonts = load_fonts(&mut rl, &thread, &config.resources);
     let textures = load_textures(&mut rl, &thread, &config.resources);
-
-    let state = Arc::new(Mutex::new(State {
-        sensor_data: Vec::new(),
-        screen_on: true,
-        screen_state: ScreenState::AUTO,
-        presence: PresenceData {
-            present: Present::YES,
-            last_switch_to_false: SystemTime::now()
-        }
-    }));
+    let state = Arc::new(Mutex::new(init_state()));
 
     ws_receiver_setup(config.clone(), &state);
 
     while !rl.window_should_close() {
+        draw_window(&mut rl, &thread, &fonts, &textures, &state)
+    }
+}
 
-        if state.lock().unwrap().screen_on {
-            let mut d = rl.begin_drawing(&thread);
-            let now = Instant::now();
+fn draw_window(rl: &mut RaylibHandle, thread: &RaylibThread, fonts: &HashMap<String, Font>, textures: &HashMap<String, Texture2D>, state: &Arc<Mutex<State>>) {
+    if state.lock().unwrap().screen_on {
+        let mut d = rl.begin_drawing(&thread);
+        let now = Instant::now();
 
-            let has_windows_data = state.lock().unwrap().sensor_data.iter()
-                .filter(|d| { d.reporter == "windows-sensor-agent"} )
-                .filter(|d| { now - d.received < Duration::from_secs(10) })
-                .count() > 0;
+        let has_windows_data = state.lock().unwrap().sensor_data.iter()
+            .filter(|d| { d.reporter == "windows-sensor-agent" })
+            .filter(|d| { now - d.received < Duration::from_secs(10) })
+            .count() > 0;
 
-            let has_linux_data = state.lock().unwrap().sensor_data.iter()
-                .filter(|d| { d.reporter == "linux-sensor-agent"} )
-                .filter(|d| { now - d.received < Duration::from_secs(10) })
-                .count() > 0;
+        let has_linux_data = state.lock().unwrap().sensor_data.iter()
+            .filter(|d| { d.reporter == "linux-sensor-agent" })
+            .filter(|d| { now - d.received < Duration::from_secs(10) })
+            .count() > 0;
 
-            if has_windows_data {
-                draw_windows_panel(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
-            } else if has_linux_data {
-                draw_linux_panel(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
-            } else {
-                draw_pending_panel(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
-            }
+        if has_windows_data {
+            draw_windows_panel(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
+        } else if has_linux_data {
+            draw_linux_panel(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
         } else {
-            if get_screen_control().should_clear_screen() {
-                let mut d = rl.begin_drawing(&thread);
-                d.clear_background(Color::BLACK);
-            } else {
-                thread::sleep(Duration::from_secs(1));
-            }
+            draw_pending_panel(&fonts, &textures, &mut d, &(state.lock().unwrap().sensor_data));
+        }
+    } else {
+        if get_screen_control().should_clear_screen() {
+            let mut d = rl.begin_drawing(&thread);
+            d.clear_background(Color::BLACK);
+        } else {
+            thread::sleep(Duration::from_secs(1));
         }
     }
 }
 
 fn ws_receiver_setup(config: Config, state: &Arc<Mutex<State>>) {
-    let thread_state = state.clone();
+    ws_receiver_loop(config, state, |event, state, config| {
+        let new_state = handle_event(event, state, config);
 
-    let value_receiver = ws_client_setup(&config);
-
-    thread::spawn(move || {
-        loop {
-            let state = Arc::clone(&thread_state);
-            match value_receiver.recv() {
-                Ok(event) => {
-                    let mut locked_state = state.lock().unwrap();
-                    let state = &*locked_state;
-                    let new_state = handle_event(event, state, &config);
-
-                    if !new_state.screen_on && state.screen_on {
-                        get_screen_control().turn_off();
-                    } else if new_state.screen_on && !state.screen_on {
-                        get_screen_control().turn_on();
-                    }
-
-                    new_state.transfer_to(& mut *locked_state);
-                }
-                Err(ee) => {
-                    println!("Got error {}", ee);
-                    process::exit(1);
-                }
-            }
+        if !new_state.screen_on && state.screen_on {
+            get_screen_control().turn_off();
+        } else if new_state.screen_on && !state.screen_on {
+            get_screen_control().turn_on();
         }
+
+        new_state.transfer_to(state);
+    },
+    |error| {
+        println!("Got error {}", error);
+        process::exit(1);
     });
 }
 
@@ -171,13 +151,12 @@ fn handle_sensor(event: SensorReport, state: &State, config: &Config) -> State {
 fn handle_presence(presence: &String, state: &State, config: &Config) -> State {
     let present = if presence == "true" { true } else { false };
 
-    let new_presence = update_presence(present, &state.presence, config.presence_threshold_secs);
-    return update_state_presence(&state, new_presence);
+    return state.update_presence(present, config.presence_threshold_secs);
 }
 
 fn handle_action(sensor_report: SensorReport, state: &State) -> State {
     return if sensor_report.sensors.contains_key("toggle_screen") {
-        toggle_screen_state(state)
+        state.toggle_screen_state()
     } else {
         state.clone()
     }

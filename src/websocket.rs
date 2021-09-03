@@ -3,11 +3,12 @@ use serde::{Serialize, Deserialize, Deserializer};
 use serde_json::json;
 use std::collections::HashMap;
 use crate::config::Config;
-use std::sync::mpsc::{Sender, Receiver};
-use std::sync::mpsc;
+use std::sync::mpsc::{Sender, Receiver, RecvError};
+use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use tungstenite::connect;
 use reqwest::{Url, blocking};
+use crate::state::State;
 
 pub fn set_to_current_instant<'de, D>(_: D) -> Result<Instant, D::Error>
     where
@@ -99,4 +100,25 @@ fn ws_register_client(relay_host: &String) -> Result<String, reqwest::Error> {
     };
 
     Ok(register_response.id)
+}
+
+pub fn ws_receiver_loop(config: Config, state: &Arc<Mutex<State>>, event_handler: fn(SensorReport, &mut State, &Config), error_handler: fn(RecvError)) {
+    let value_receiver = ws_client_setup(&config);
+    let thread_state = state.clone();
+
+    thread::spawn(move || {
+        loop {
+            let state = Arc::clone(&thread_state);
+
+            match value_receiver.recv() {
+                Ok(event) => {
+                    let mut locked_state = state.lock().unwrap();
+                    event_handler(event, &mut *locked_state, &config);
+                }
+                Err(error) => {
+                    println!("Calling error handler"); error_handler(error);
+                }
+            }
+        }
+    });
 }
