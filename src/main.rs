@@ -72,7 +72,7 @@ fn main() {
         state
     };
 
-    ws_receiver_setup(&context);
+    event_receiver_setup(&context);
 
     while !context.handle.window_should_close() {
         draw_window(&mut context);
@@ -111,7 +111,7 @@ fn draw_window(context: &mut Context) {
     }
 }
 
-fn ws_receiver_setup(context: &Context) {
+fn event_receiver_setup(context: &Context) {
     WebSocket::receiver_loop(&context, |event, state, config| {
         let new_state = Event::handle(event, state, config);
 
