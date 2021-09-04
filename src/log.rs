@@ -1,5 +1,3 @@
-use chrono::{DateTime, Local};
-
 pub trait LogExt {
     fn log(level: LogLevel, message: &str);
 }
@@ -17,8 +15,9 @@ pub struct Log();
 
 impl LogExt for Log {
     fn log(level: LogLevel, message: &str) {
-        let now: DateTime<Local> = Local::now();
+        //let now: DateTime<Local> = Local::now();
+        //println!("{} [{:?}]:  {}", now.format("%Y-%m-%d %H:%M:%S%.3f"), level, message);
 
-        println!("{} [{:?}]:  {}", now.format("%Y-%m-%d %H:%M:%S%.3f"), level, message);
+        println!("[{:?}] {}", level, message);
     }
 }
