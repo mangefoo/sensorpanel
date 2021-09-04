@@ -75,7 +75,7 @@ fn main() {
     ws_receiver_setup(&context);
 
     while !context.handle.window_should_close() {
-        draw_window(&mut context); //&mut rl, &thread, &fonts, &textures, &state)
+        draw_window(&mut context);
     }
 }
 
