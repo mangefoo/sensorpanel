@@ -115,12 +115,11 @@ fn ws_receiver_setup(context: &Context) {
     WebSocket::receiver_loop(&context, |event, state, config| {
         let new_state = Event::handle(event, state, config);
 
-        let actions = new_state.state_change_actions(state);
-
-        if actions.contains(&Action::ScreenOn) {
-            get_screen_control().turn_on();
-        } else if actions.contains(&Action::ScreenOff) {
-            get_screen_control().turn_off();
+        for action in new_state.state_change_actions(state) {
+            match action {
+                Action::ScreenOn => get_screen_control().turn_on(),
+                Action::ScreenOff => get_screen_control().turn_off()
+            };
         }
 
         new_state.transfer_to(state);
