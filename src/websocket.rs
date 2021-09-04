@@ -4,12 +4,13 @@ use serde_json::json;
 use std::collections::HashMap;
 use crate::config::Config;
 use std::sync::mpsc::{Sender, Receiver, RecvError};
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{mpsc, Arc};
 use std::thread;
 use tungstenite::connect;
 use reqwest::{Url, blocking};
 use crate::state::State;
 use crate::log::{Log, LogExt, LogLevel};
+use crate::context::Context;
 
 pub fn set_to_current_instant<'de, D>(_: D) -> Result<Instant, D::Error>
     where
@@ -36,16 +37,17 @@ pub struct SensorReport {
     pub(crate) received: Instant
 }
 
-pub trait WebSocketExt {
-    fn receiver_loop(config: Config, state: &Arc<Mutex<State>>, event_handler: fn(SensorReport, &mut State, &Config), error_handler: fn(RecvError));
+pub(crate) trait WebSocketExt {
+    fn receiver_loop(context: &Context, event_handler: fn(SensorReport, &mut State, &Config), error_handler: fn(RecvError));
 }
 
 pub struct WebSocket {}
 
 impl WebSocketExt for WebSocket {
-    fn receiver_loop(config: Config, state: &Arc<Mutex<State>>, event_handler: fn(SensorReport, &mut State, &Config), error_handler: fn(RecvError)) {
-        let value_receiver = ws_client_setup(&config);
-        let thread_state = state.clone();
+    fn receiver_loop(context: &Context, event_handler: fn(SensorReport, &mut State, &Config), error_handler: fn(RecvError)) {
+        let value_receiver = ws_client_setup(&context.config);
+        let thread_state = context.state.clone();
+        let thread_config = context.config.clone();
 
         thread::spawn(move || {
             loop {
@@ -54,7 +56,7 @@ impl WebSocketExt for WebSocket {
                 match value_receiver.recv() {
                     Ok(event) => {
                         let mut locked_state = state.lock().unwrap();
-                        event_handler(event, &mut *locked_state, &config);
+                        event_handler(event, &mut *locked_state, &thread_config);
                     }
                     Err(error) => {
                         error_handler(error);
