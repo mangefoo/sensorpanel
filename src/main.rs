@@ -6,7 +6,7 @@ use crate::config::{read_config};
 use clap::{App, Arg};
 use crate::screenctl::get_screen_control;
 use std::time::{Duration, Instant};
-use crate::state::{StateExt, State};
+use crate::state::{StateExt, State, Action};
 use raylib::core::drawing::RaylibDraw;
 use raylib::color::Color;
 use crate::websocket::{WebSocket, WebSocketExt};
@@ -115,10 +115,12 @@ fn ws_receiver_setup(context: &Context) {
     WebSocket::receiver_loop(&context, |event, state, config| {
         let new_state = Event::handle(event, state, config);
 
-        if !new_state.screen_on && state.screen_on {
-            get_screen_control().turn_off();
-        } else if new_state.screen_on && !state.screen_on {
+        let actions = new_state.state_change_actions(state);
+
+        if actions.contains(&Action::ScreenOn) {
             get_screen_control().turn_on();
+        } else if actions.contains(&Action::ScreenOff) {
+            get_screen_control().turn_off();
         }
 
         new_state.transfer_to(state);

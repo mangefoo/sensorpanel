@@ -29,10 +29,17 @@ pub struct State {
     pub presence: PresenceData
 }
 
+#[derive(PartialEq)]
+pub enum Action {
+    ScreenOn,
+    ScreenOff
+}
+
 pub trait StateExt {
     fn transfer_to(self: Self, _: &mut Self);
     fn update_presence(self: &Self, present: bool, presence_threshold_secs: u32) -> Self;
     fn toggle_screen_state(self: &Self) -> Self;
+    fn state_change_actions(self: &Self, other: &Self) -> Vec<Action>;
     fn init() -> Self;
 }
 
@@ -84,6 +91,18 @@ impl StateExt for State {
         };
 
         return new_state;
+    }
+
+    fn state_change_actions(self: &Self, previous: &Self) -> Vec<Action> {
+        let mut actions = Vec::new();
+
+        if !self.screen_on && previous.screen_on {
+            actions.push(Action::ScreenOff);
+        } else if self.screen_on && !previous.screen_on {
+            actions.push(Action::ScreenOn);
+        }
+
+        actions
     }
 
     fn init() -> State {
