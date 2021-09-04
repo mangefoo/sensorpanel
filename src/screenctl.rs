@@ -1,6 +1,7 @@
 use std::process::Command;
 use std::path::Path;
 use std::thread;
+use crate::log::{Log, LogExt, LogLevel};
 
 pub trait ScreenControl {
     fn turn_on(&self) -> bool;
@@ -57,12 +58,12 @@ struct SoftwareScreenControl {}
 
 impl ScreenControl for SoftwareScreenControl {
     fn turn_on(&self) -> bool {
-        println!("Turning on screen");
+        Log::log(LogLevel::INFO, "Turning on screen");
         return true;
     }
 
     fn turn_off(&self) -> bool {
-        println!("Turning off screen");
+        Log::log(LogLevel::INFO, "Turning off screen");
         return true;
     }
 

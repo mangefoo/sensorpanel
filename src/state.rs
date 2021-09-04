@@ -1,5 +1,6 @@
 use crate::data::{SensorData};
 use std::time::SystemTime;
+use crate::log::{Log, LogExt, LogLevel};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ScreenState {
@@ -50,19 +51,21 @@ impl StateExt for State {
         let mut new_presence = &mut new_state.presence;
 
         if present && new_presence.present == Present::NO {
-            println!("Presence set to YES");
             new_presence.present = Present::YES;
         } else if !present && new_presence.present == Present::PENDING && duration_since_switch_to_false.as_secs() > presence_threshold_secs as u64 {
-            println!("Presence set to NO");
             new_presence.present = Present::NO;
         } else if !present && new_presence.present == Present::YES {
-            println!("Presence set to PENDING");
             new_presence.present = Present::PENDING;
             new_presence.last_switch_to_false = SystemTime::now();
         } else if present {
-            println!("Presence reset to YES");
             new_presence.present = Present::YES;
         }
+
+        if self.presence.present != new_presence.present {
+            Log::log(LogLevel::TRACE, &*format!("Presence transitioned to {:?}", new_presence.present));
+        }
+
+        new_state.screen_on = new_state.screen_state == ScreenState::AUTO && new_presence.present != Present::NO;
 
         return new_state;
     }

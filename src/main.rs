@@ -10,7 +10,7 @@ use std::time::{Duration, Instant};
 use crate::state::{StateExt, State};
 use raylib::core::drawing::RaylibDraw;
 use raylib::color::Color;
-use crate::websocket::{SensorReport, ws_receiver_loop};
+use crate::websocket::{SensorReport, WebSocket, WebSocketExt};
 use raylib::core::texture::Texture2D;
 use std::collections::HashMap;
 use raylib::{RaylibHandle, RaylibThread};
@@ -19,6 +19,7 @@ use pending_panel::PendingPanel;
 use crate::windows_panel::WindowsPanel;
 use crate::panel::Panel;
 use crate::linux_panel::LinuxPanel;
+use crate::log::{Log, LogExt, LogLevel};
 
 mod config;
 mod fonts;
@@ -33,6 +34,7 @@ mod screenctl;
 mod state;
 mod websocket;
 mod panel;
+mod log;
 
 fn main() {
     #[link(name="libray", kind="dylib")]
@@ -62,7 +64,7 @@ fn main() {
     let textures = load_textures(&mut rl, &thread, &config.resources);
     let state = Arc::new(Mutex::new(State::init()));
 
-    ws_receiver_setup(config.clone(), &state);
+    ws_receiver_setup(config, &state);
 
     while !rl.window_should_close() {
         draw_window(&mut rl, &thread, &fonts, &textures, &state)
@@ -102,7 +104,7 @@ fn draw_window(rl: &mut RaylibHandle, thread: &RaylibThread, fonts: &HashMap<Str
 }
 
 fn ws_receiver_setup(config: Config, state: &Arc<Mutex<State>>) {
-    ws_receiver_loop(config, state, |event, state, config| {
+    WebSocket::receiver_loop(config, state, |event, state, config| {
         let new_state = handle_event(event, state, config);
 
         if !new_state.screen_on && state.screen_on {
@@ -114,7 +116,7 @@ fn ws_receiver_setup(config: Config, state: &Arc<Mutex<State>>) {
         new_state.transfer_to(state);
     },
     |error| {
-        println!("Got error {}", error);
+        Log::log(LogLevel::ERROR, &*format!("Got error {}", error));
         process::exit(1);
     });
 }
@@ -151,13 +153,11 @@ fn handle_sensor(event: SensorReport, state: &State, config: &Config) -> State {
 }
 
 fn handle_presence(presence: &String, state: &State, config: &Config) -> State {
-    let present = if presence == "true" { true } else { false };
-
-    return state.update_presence(present, config.presence_threshold_secs);
+    state.update_presence(presence == "true", config.presence_threshold_secs)
 }
 
 fn handle_action(sensor_report: SensorReport, state: &State) -> State {
-    return if sensor_report.sensors.contains_key("toggle_screen") {
+    if sensor_report.sensors.contains_key("toggle_screen") {
         state.toggle_screen_state()
     } else {
         state.clone()

@@ -9,6 +9,7 @@ use std::thread;
 use tungstenite::connect;
 use reqwest::{Url, blocking};
 use crate::state::State;
+use crate::log::{Log, LogExt, LogLevel};
 
 pub fn set_to_current_instant<'de, D>(_: D) -> Result<Instant, D::Error>
     where
@@ -35,7 +36,36 @@ pub struct SensorReport {
     pub(crate) received: Instant
 }
 
-pub fn ws_client_setup(config: &Config) -> Receiver<SensorReport> {
+pub trait WebSocketExt {
+    fn receiver_loop(config: Config, state: &Arc<Mutex<State>>, event_handler: fn(SensorReport, &mut State, &Config), error_handler: fn(RecvError));
+}
+
+pub struct WebSocket {}
+
+impl WebSocketExt for WebSocket {
+    fn receiver_loop(config: Config, state: &Arc<Mutex<State>>, event_handler: fn(SensorReport, &mut State, &Config), error_handler: fn(RecvError)) {
+        let value_receiver = ws_client_setup(&config);
+        let thread_state = state.clone();
+
+        thread::spawn(move || {
+            loop {
+                let state = Arc::clone(&thread_state);
+
+                match value_receiver.recv() {
+                    Ok(event) => {
+                        let mut locked_state = state.lock().unwrap();
+                        event_handler(event, &mut *locked_state, &config);
+                    }
+                    Err(error) => {
+                        error_handler(error);
+                    }
+                }
+            }
+        });
+    }
+}
+
+fn ws_client_setup(config: &Config) -> Receiver<SensorReport> {
     let (tx, rx): (Sender<SensorReport>, Receiver<SensorReport>) = mpsc::channel();
     let thread_tx = tx.clone();
     let relay_host= config.relay_host.clone();
@@ -45,7 +75,7 @@ pub fn ws_client_setup(config: &Config) -> Receiver<SensorReport> {
             Ok(url) => url
         };
 
-        println!("Got WS ID: {}", id);
+        Log::log(LogLevel::DEBUG, &*format!("Got WS ID: {}", id));
 
         ws_read_loop(format!("ws://{}/ws/{}", relay_host, id), thread_tx);
     };
@@ -59,11 +89,11 @@ fn ws_read_loop(url: String, value_sender: Sender<SensorReport>) {
     let (mut socket, response) =
         connect(Url::parse(&url).unwrap()).expect("Can't connect");
 
-    println!("Connected to the server");
-    println!("Response HTTP code: {}", response.status());
-    println!("Response contains the following headers:");
+    Log::log(LogLevel::DEBUG, "Connected to the server");
+    Log::log(LogLevel::DEBUG, &*format!("Response HTTP code: {}", response.status()));
+    Log::log(LogLevel::DEBUG, "Response contains the following headers:");
     for (ref header, _value) in response.headers() {
-        println!("* {}", header);
+        Log::log(LogLevel::DEBUG,&*format!("* {}", header));
     }
 
     loop {
@@ -71,7 +101,7 @@ fn ws_read_loop(url: String, value_sender: Sender<SensorReport>) {
         let report: SensorReport = serde_json::from_str(msg.to_text().unwrap()).unwrap();
         let result = value_sender.send(report);
         match result {
-            Err(error) => { println!("Failed to send request: {}", error)}
+            Err(error) => { Log::log(LogLevel::ERROR, &*format!("Failed to send request: {}", error))}
             _ => {}
         }
     }
@@ -91,7 +121,7 @@ fn ws_register_client(relay_host: &String) -> Result<String, reqwest::Error> {
 
     let response = match response {
         Err(error) => panic!("Request failed: {}", error),
-        Ok(response) => { println!("Request OK"); response }
+        Ok(response) => { Log::log(LogLevel::DEBUG, "Request OK"); response }
     };
 
     let register_response: RegisterResponse = match response.json() {
@@ -100,25 +130,4 @@ fn ws_register_client(relay_host: &String) -> Result<String, reqwest::Error> {
     };
 
     Ok(register_response.id)
-}
-
-pub fn ws_receiver_loop(config: Config, state: &Arc<Mutex<State>>, event_handler: fn(SensorReport, &mut State, &Config), error_handler: fn(RecvError)) {
-    let value_receiver = ws_client_setup(&config);
-    let thread_state = state.clone();
-
-    thread::spawn(move || {
-        loop {
-            let state = Arc::clone(&thread_state);
-
-            match value_receiver.recv() {
-                Ok(event) => {
-                    let mut locked_state = state.lock().unwrap();
-                    event_handler(event, &mut *locked_state, &config);
-                }
-                Err(error) => {
-                    println!("Calling error handler"); error_handler(error);
-                }
-            }
-        }
-    });
 }

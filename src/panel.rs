@@ -7,4 +7,3 @@ use crate::data::SensorData;
 pub trait Panel {
     fn draw(fonts: &HashMap<String, Font>, textures: &HashMap<String, Texture2D>, d: &mut RaylibDrawHandle, data: &Vec<SensorData>);
 }
-
