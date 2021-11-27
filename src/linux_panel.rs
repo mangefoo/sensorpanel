@@ -31,7 +31,7 @@ impl Panel for LinuxPanel {
             draw_net_panel(&mut d, 10, 409, &fonts, &linux_data);
             draw_core_panel(&mut d, 530, 5, &fonts, &linux_data);
             draw_mem_panel(&mut d, 520, 320, &fonts, &linux_data);
-            draw_temp_panel(&mut d, 520, 435, &fonts, &linux_data);
+            draw_temp_panel(&mut d, 520, 450, &fonts, &linux_data);
         }
 
         draw_time_panel(&mut d, 530, 560, &fonts, &hue_data);
