@@ -190,6 +190,33 @@ pub fn draw_net_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
 
 fn bytes_to_mbit(bytes: i64) -> f32 { (bytes * 8) as f32 / 1000000.0 }
 
+pub fn draw_temp_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>) {
+
+    let latest_data = data.last().unwrap();
+
+    let pump_temp: f32 = latest_data.values.get("pump_temp").unwrap_or(&"0".to_string()).parse().unwrap();
+    let front_intake_temp: f32 = latest_data.values.get("front_intake_temp").unwrap_or(&"0".to_string()).parse().unwrap();
+    let exhaust_temp: f32 = latest_data.values.get("exhaust_temp").unwrap_or(&"0".to_string()).parse().unwrap();
+    let ambient_temp: f32 = latest_data.values.get("ambient_temp").unwrap_or(&"0".to_string()).parse().unwrap();
+
+    let xf = x as f32;
+    let yf = y as f32;
+
+    d.draw_text_ex(get_font(fonts, "calibri_40_bold"), "Temps", Vector2::new(xf + 10.0, yf + 10.0), 40.0, 0.0, Color::WHITE);
+
+    draw_temperature_gauge(&mut d, x + 150, y , pump_temp as i32, get_font(fonts, "calibri_20"), get_font(fonts, "calibri_13"));
+    d.draw_text_ex(get_font(fonts, "calibri_20"), "Pump", Vector2::new(xf + 152.0, yf + 55.0), 20.0, 0.0, Color::WHITE);
+
+    draw_temperature_gauge(&mut d, x + 230, y , front_intake_temp as i32, get_font(fonts, "calibri_20"), get_font(fonts, "calibri_13"));
+    d.draw_text_ex(get_font(fonts, "calibri_20"), "Intake", Vector2::new(xf + 232.0, yf + 55.0), 20.0, 0.0, Color::WHITE);
+
+    draw_temperature_gauge(&mut d, x + 310, y, exhaust_temp as i32, get_font(fonts, "calibri_20"), get_font(fonts, "calibri_13"));
+    d.draw_text_ex(get_font(fonts, "calibri_20"), "Exhaust", Vector2::new(xf + 306.0, yf + 55.0), 20.0, 0.0, Color::WHITE);
+
+    draw_temperature_gauge(&mut d, x + 390, y, ambient_temp as i32, get_font(fonts, "calibri_20"), get_font(fonts, "calibri_13"));
+    d.draw_text_ex(get_font(fonts, "calibri_20"), "Ambient", Vector2::new(xf + 382.0, yf + 55.0), 20.0, 0.0, Color::WHITE);
+}
+
 pub fn draw_time_panel(d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>) {
 
     let latest_data = data.last();
