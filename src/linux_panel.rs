@@ -25,6 +25,10 @@ impl Panel for LinuxPanel {
             .filter(|d| { d.reporter == "hue-sensor-agent" })
             .collect::<Vec<&SensorData>>();
 
+        let crypto_data = data.iter()
+            .filter(|d| { d.reporter == "crypto-publisher" })
+            .collect::<Vec<&SensorData>>();
+
         if !linux_data.is_empty() {
             draw_cpu_panel(&mut d, 10, 5, &fonts, &linux_data);
             draw_gpu_panel(&mut d, 10, 207, &fonts, &linux_data);
@@ -34,6 +38,6 @@ impl Panel for LinuxPanel {
             draw_temp_panel(&mut d, 520, 450, &fonts, &linux_data);
         }
 
-        draw_time_panel(&mut d, 530, 560, &fonts, &hue_data);
+        draw_time_panel(&mut d, 530, 560, &fonts, &hue_data, &crypto_data);
     }
 }
