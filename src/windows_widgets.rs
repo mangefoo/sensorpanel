@@ -2,7 +2,6 @@ use raylib::prelude::*;
 use std::collections::HashMap;
 use crate::fonts::get_font;
 use crate::data::SensorData;
-use chrono::Local;
 
 pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>) {
 
@@ -214,23 +213,6 @@ pub fn draw_hdd_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
 }
 
 fn bytes_to_gigabytes(bytes: i64) -> i64 { bytes / 1024 / 1024 / 1024 }
-
-pub fn draw_time_panel(d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>) {
-
-    let latest_data = data.last();
-
-    if latest_data.is_some() {
-        let office_temp: f32 = latest_data.unwrap().values.get("hue_temperature").unwrap_or(&"0".to_string()).parse().unwrap();
-
-        let temp = format!("{:.1}   C", office_temp);
-        d.draw_text_ex(get_font(fonts, "calibri_30"), &temp, Vector2::new((x + 265) as f32, y as f32), 30.0, 0.0, Color::WHITE);
-        d.draw_circle(x + 329, y + 7, 4.0, Color::WHITE);
-        d.draw_circle(x + 329, y + 7, 2.0, Color::new(1,0,240, 255));
-    }
-
-    let date = Local::now().format("%H:%M:%S").to_string();
-    d.draw_text_ex(get_font(fonts, "calibri_30"), &date, Vector2::new((x + 375) as f32, y as f32), 30.0, 0.0, Color::WHITE);
-}
 
 pub fn draw_graph_grid(d: &mut &mut RaylibDrawHandle, x: i32, y: i32) {
     let grid_color = Color::new(49, 50, 50, 255);

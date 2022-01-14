@@ -21,6 +21,7 @@ use crate::event::{Event, EventExt};
 mod config;
 mod fonts;
 mod textures;
+mod common_widgets;
 mod windows_widgets;
 mod linux_widgets;
 mod windows_panel;
