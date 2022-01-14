@@ -58,7 +58,7 @@ fn main() {
         .title("SensorPanel")
         .build();
 
-    handle.set_target_fps(60);
+    handle.set_target_fps(config.fps);
 
     let fonts = load_fonts(&mut handle, &thread, &config.resources);
     let textures = load_textures(&mut handle, &thread, &config.resources);
