@@ -46,7 +46,7 @@ pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     draw_graph(&mut d, x + 10, y + 100, usage_graph_values, Color::GREEN);
 }
 
-pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>) {
+pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>, drawGraph: bool) {
 
     let xf = x as f32;
     let yf = y as f32;
@@ -54,8 +54,16 @@ pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     let latest_data = data.last().unwrap();
 
     let gpu_utilization: f32 = latest_data.values.get("gpu_utilization").unwrap_or(&"0".to_string()).parse().unwrap();
-    let gpu_die_temp: f32 = latest_data.values.get("gpu_edge_temp").unwrap_or(&"0".to_string()).parse().unwrap();
-    let gpu_package_temp: f32 = latest_data.values.get("gpu_junction_temp").unwrap_or(&"0".to_string()).parse().unwrap();
+    let gpu_die_temp: f32 = latest_data.values.get("gpu_edge_temp")
+        .or(latest_data.values.get("gpu_die_temp"))
+        .unwrap_or(&"0".to_string())
+        .parse().unwrap();
+
+    let gpu_package_temp: f32 = latest_data.values.get("gpu_junction_temp")
+        .or(latest_data.values.get("gpu_package_temp"))
+        .unwrap_or(&"0".to_string())
+        .parse().unwrap();
+
     let gpu_power: f32 = latest_data.values.get("gpu_power").unwrap_or(&"0".to_string()).parse().unwrap();
     let gpu_voltage: f32 = latest_data.values.get("gpu_voltage").unwrap_or(&"0".to_string()).parse().unwrap();
     let gpu_frequency: f32 = latest_data.values.get("gpu_frequency").unwrap_or(&"0".to_string()).parse().unwrap();
@@ -75,15 +83,17 @@ pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     d.draw_text_ex(get_font(fonts, "calibri_25_bold"), "Usage", Vector2::new(xf + 10.0, yf + 65.0), 25.0, 0.0, Color::WHITE);
     draw_meter_bar(&mut d, x + 80, y + 65, 390, 23, gpu_utilization as i32, 100, (gradient_color_1, gradient_color_2), fonts);
 
-    draw_graph_grid(&mut d, x + 10, y + 100);
+    if drawGraph {
+        draw_graph_grid(&mut d, x + 10, y + 100);
 
-    let usage_graph_values = &data.iter()
-        .map(|d| d.values.get("gpu_utilization"))
-        .filter(|util| util.is_some())
-        .map(|v| v.unwrap().parse::<f32>().unwrap())
-        .collect();
+        let usage_graph_values = &data.iter()
+            .map(|d| d.values.get("gpu_utilization"))
+            .filter(|util| util.is_some())
+            .map(|v| v.unwrap().parse::<f32>().unwrap())
+            .collect();
 
-    draw_graph(&mut d, x + 10, y + 100, usage_graph_values, Color::RED);
+        draw_graph(&mut d, x + 10, y + 100, usage_graph_values, Color::RED);
+    }
 }
 
 pub fn draw_mem_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>) {
@@ -275,7 +285,7 @@ pub fn draw_temperature_gauge(d: &mut RaylibDrawHandle, x: i32, y: i32, value: i
         _ => Color::GREEN
     };
 
-    d.draw_circle_sector(Vector2::new(x as f32 + 25.0, y as f32 + 25.0), 20.0, 680 - end_angle, 680, 1000, color);
+    d.draw_circle_sector(Vector2::new(x as f32 + 25.0, y as f32 + 25.0), 20.0, 680.0 - end_angle as f32, 680.0, 1000, color);
     d.draw_circle(x + 25, y + 25, 13.0, Color::BLACK);
 
     d.draw_text_ex(font, &value.to_string(), Vector2::new(x as f32 + 15.0, y as f32 + 17.0), 20.0, 0.0, Color::WHITE);

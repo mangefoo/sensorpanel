@@ -22,6 +22,10 @@ impl Panel for LinuxPanel {
             .filter(|d| { d.reporter == "linux-sensor-agent" })
             .collect::<Vec<&SensorData>>();
 
+        let guest_data = data.iter()
+            .filter(|d| { d.reporter == "linux-guest-sensor-agent" })
+            .collect::<Vec<&SensorData>>();
+
         let hue_data = data.iter()
             .filter(|d| { d.reporter == "hue-sensor-agent" })
             .collect::<Vec<&SensorData>>();
@@ -32,7 +36,12 @@ impl Panel for LinuxPanel {
 
         if !linux_data.is_empty() {
             draw_cpu_panel(&mut d, 10, 5, &fonts, &linux_data);
-            draw_gpu_panel(&mut d, 10, 207, &fonts, &linux_data);
+            if guest_data.is_empty() {
+                draw_gpu_panel(&mut d, 10, 207, &fonts, &linux_data, true);
+            } else {
+                draw_gpu_panel(&mut d, 10, 197, &fonts, &linux_data, false);
+                draw_gpu_panel(&mut d, 10, 307, &fonts, &guest_data, false);
+            }
             draw_net_panel(&mut d, 10, 409, &fonts, &linux_data);
             draw_core_panel(&mut d, 530, 5, &fonts, &linux_data);
             draw_mem_panel(&mut d, 520, 320, &fonts, &linux_data);

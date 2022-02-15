@@ -273,7 +273,7 @@ pub fn draw_temperature_gauge(d: &mut RaylibDrawHandle, x: i32, y: i32, value: i
         _ => Color::GREEN
     };
 
-    d.draw_circle_sector(Vector2::new(x as f32 + 25.0, y as f32 + 25.0), 20.0, 680 - end_angle, 680, 1000, color);
+    d.draw_circle_sector(Vector2::new(x as f32 + 25.0, y as f32 + 25.0), 20.0, 680.0 - end_angle as f32, 680.0, 1000, color);
     d.draw_circle(x + 25, y + 25, 13.0, Color::BLACK);
 
     d.draw_text_ex(font, &value.to_string(), Vector2::new(x as f32 + 15.0, y as f32 + 17.0), 20.0, 0.0, Color::WHITE);
