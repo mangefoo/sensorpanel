@@ -1,0 +1,1 @@
+console=serial0,115200 console=tty1 root=PARTUUID=dea91581-02 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait quiet splash plymouth.ignore-serial-consoles fbcon=map:10 fbcon=font:ProFont6x11
