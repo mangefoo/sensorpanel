@@ -261,12 +261,12 @@ pub fn draw_rpm_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
 
     let latest_data = data.last().unwrap();
 
-    let top_1 = 806;
-    let top_2 = 807;
-    let top_3 = 806;
-    let front_1 = 989;
-    let front_2 = 999;
-    let pump = 2097;
+    let top_1 = latest_data.values.get("fan1_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap() as i32;
+    let top_2 = latest_data.values.get("fan2_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap() as i32;
+    let top_3 = latest_data.values.get("fan3_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap() as i32;
+    let front_1 = latest_data.values.get("fan4_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap() as i32;
+    let front_2 = latest_data.values.get("fan5_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap() as i32;
+    let pump = latest_data.values.get("pump_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap() as i32;
 
     let xf = x as f32;
     let yf = y as f32;
