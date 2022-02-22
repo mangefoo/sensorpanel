@@ -2,6 +2,8 @@ use raylib::prelude::*;
 use std::collections::HashMap;
 use crate::fonts::get_font;
 use crate::data::SensorData;
+use crate::{Log, LogLevel};
+use crate::log::LogExt;
 
 pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>) {
 

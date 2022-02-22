@@ -9,7 +9,7 @@ pub fn get_font<'a>(fonts: &'a HashMap<String, Font>, name: &str) -> &'a Font {
 pub fn load_fonts(rl: &mut RaylibHandle, thread: &RaylibThread, resources: &String) -> HashMap<String, Font> {
     let mut fonts = HashMap::<String, Font>::new();
 
-    for font in vec!["calibri_13", "calibri_20", "calibri_30", "calibri_25_bold", "calibri_40_bold", "calibri_50_bold"] {
+    for font in vec!["calibri_13", "calibri_15", "calibri_20", "calibri_30", "calibri_25_bold", "calibri_40_bold", "calibri_50_bold"] {
         let font_str = font.to_string();
         fonts.insert(font_str.clone(), load_font(rl, thread, resources, &font_str));
     }
