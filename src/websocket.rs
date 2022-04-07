@@ -55,9 +55,8 @@ impl WebSocketExt for WebSocket {
 
                 match value_receiver.recv() {
                     Ok(event) => {
-                        let mut locked_state = state.lock();
-                        if locked_state.is_ok() {
-                            event_handler(event, &mut *locked_state.unwrap(), &thread_config);
+                        if let Ok(mut locked_state) = state.lock() {
+                            event_handler(event, &mut *locked_state, &thread_config);
                         }
                     }
                     Err(error) => {

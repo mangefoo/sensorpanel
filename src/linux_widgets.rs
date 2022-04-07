@@ -3,11 +3,13 @@ use std::collections::HashMap;
 use crate::fonts::get_font;
 use crate::data::SensorData;
 
-pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>) {
+pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, images: &HashMap<String, Texture2D>, data: &Vec<&SensorData>) {
 
     let xf = x as f32;
     let yf = y as f32;
     let latest_data = data.last().unwrap();
+
+    d.draw_texture(images.get("ryzen_logo").unwrap(), x + 10, y + 5, Color::WHITE);
 
     let max_core_frequency = (1..=16).into_iter()
         .map(|core_number| format!("cpu_core_frequency_{}", core_number))
@@ -20,15 +22,17 @@ pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
 
     let cpu_utilization: f32 = latest_data.values.get("cpu_utilization").unwrap_or(&"0".to_string()).parse().unwrap();
     let cpu_die_temp: f32 = latest_data.values.get("cpu_temp").unwrap_or(&"0".to_string()).parse().unwrap();
-    let cpu_package_temp: f32 = latest_data.values.get("cpu_package_temp").unwrap_or(&"0".to_string()).parse().unwrap();
+    //let cpu_package_temp: f32 = latest_data.values.get("cpu_package_temp").unwrap_or(&"0".to_string()).parse().unwrap();
     let cpu_power: f32 = latest_data.values.get("cpu_power").unwrap_or(&"0".to_string()).parse().unwrap();
 
-    d.draw_text_ex(get_font(fonts, "calibri_40_bold"), "CPU", Vector2::new(xf + 10.0, yf + 10.0), 40.0, 0.0, Color::WHITE);
-    d.draw_text_ex(get_font(fonts, "calibri_20"), &*format!("{:.2} W", cpu_power), Vector2::new(xf + 110.0, yf + 21.0), 20.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri_25_bold"), "Ryzen", Vector2::new(xf + 75.0, yf + 10.0), 25.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri_20"), "5950X", Vector2::new(xf + 75.0, yf + 30.0), 20.0, 0.0, Color::WHITE);
+//    d.draw_text_ex(get_font(fonts, "calibri_40_bold"), "CPU", Vector2::new(xf + 10.0, yf + 10.0), 40.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri_20"), &*format!("{:.2} W", cpu_power), Vector2::new(xf + 150.0, yf + 21.0), 20.0, 0.0, Color::WHITE);
 
-    draw_temperature_gauge(&mut d, x + 200, y + 5, cpu_die_temp as i32, get_font(fonts, "calibri_20"), get_font(fonts, "calibri_13"));
-    draw_temperature_gauge(&mut d, x + 275, y + 5, cpu_package_temp as i32, get_font(fonts, "calibri_20"), get_font(fonts, "calibri_13"));
-    d.draw_text_ex(get_font(fonts, "calibri_30"), &*format!("{} MHz", max_core_frequency), Vector2::new(xf + 340.0, yf + 18.0), 30.0, 0.0, Color::WHITE);
+    draw_temperature_gauge(&mut d, x + 235, y + 5, cpu_die_temp as i32, get_font(fonts, "calibri_20"), get_font(fonts, "calibri_13"));
+//    draw_temperature_gauge(&mut d, x + 275, y + 5, cpu_package_temp as i32, get_font(fonts, "calibri_20"), get_font(fonts, "calibri_13"));
+    d.draw_text_ex(get_font(fonts, "calibri_30"), &*format!("{} MHz", max_core_frequency), Vector2::new(xf + 305.0, yf + 18.0), 30.0, 0.0, Color::WHITE);
 
     d.draw_text_ex(get_font(fonts, "calibri_25_bold"), "Usage", Vector2::new(xf + 10.0, yf + 65.0), 25.0, 0.0, Color::WHITE);
     let gradient_color_1 = Color::new(0, 200, 0, 255);
@@ -46,12 +50,14 @@ pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     draw_graph(&mut d, x + 10, y + 100, usage_graph_values, Color::GREEN);
 }
 
-pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>, sub_title: Option<&str>, should_draw_graph: bool) {
+pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, images: &HashMap<String, Texture2D>, data: &Vec<&SensorData>, sub_title: Option<&str>, should_draw_graph: bool) {
 
     let xf = x as f32;
     let yf = y as f32;
 
     let latest_data = data.last().unwrap();
+
+    d.draw_texture(images.get("amd_logo").unwrap(), x + 10, y + 5, Color::WHITE);
 
     let gpu_utilization: f32 = latest_data.values.get("gpu_utilization").unwrap_or(&"0".to_string()).parse().unwrap();
     let gpu_die_temp: f32 = latest_data.values.get("gpu_edge_temp")
@@ -70,19 +76,19 @@ pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     let gpu_fps: f32 = latest_data.values.get("gpu_fps").unwrap_or(&"0".to_string()).parse().unwrap();
 
     if sub_title.is_some() {
-        d.draw_text_ex(get_font(fonts, "calibri_25_bold"), "GPU", Vector2::new(xf + 10.0, yf + 10.0), 25.0, 0.0, Color::WHITE);
-        d.draw_text_ex(get_font(fonts, "calibri_20"), sub_title.unwrap(), Vector2::new(xf + 10.0, yf + 30.0), 20.0, 0.0, Color::WHITE);
+        d.draw_text_ex(get_font(fonts, "calibri_25_bold"), "Radeon", Vector2::new(xf + 70.0, yf + 10.0), 25.0, 0.0, Color::WHITE);
+        d.draw_text_ex(get_font(fonts, "calibri_20"), sub_title.unwrap(), Vector2::new(xf + 70.0, yf + 30.0), 20.0, 0.0, Color::WHITE);
     } else {
-        d.draw_text_ex(get_font(fonts, "calibri_50_bold"), "GPU", Vector2::new(xf + 10.0, yf + 10.0), 50.0, 0.0, Color::WHITE);
+        d.draw_text_ex(get_font(fonts, "calibri_50_bold"), "GPU", Vector2::new(xf + 75.0, yf + 10.0), 50.0, 0.0, Color::WHITE);
     }
-    d.draw_text_ex(get_font(fonts, "calibri_20"), &*format!("{:.2} W", gpu_power), Vector2::new(xf + 110.0,  yf + 12.0), 20.0, 0.0, Color::WHITE);
-    d.draw_text_ex(get_font(fonts, "calibri_20"), &*format!("{:.2} V", gpu_voltage), Vector2::new(xf + 110.0, yf + 30.0), 20.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri_20"), &*format!("{:.0} W", gpu_power), Vector2::new(xf + 160.0,  yf + 12.0), 20.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri_20"), &*format!("{:.2} V", gpu_voltage), Vector2::new(xf + 160.0, yf + 30.0), 20.0, 0.0, Color::WHITE);
 
-    draw_temperature_gauge(&mut d, x + 200, y + 5, gpu_die_temp as i32, get_font(fonts, "calibri_20"), get_font(fonts, "calibri_13"));
-    draw_temperature_gauge(&mut d, x + 275, y + 5, gpu_package_temp as i32, get_font(fonts, "calibri_20"), get_font(fonts, "calibri_13"));
+    draw_temperature_gauge(&mut d, x + 230, y + 5, gpu_die_temp as i32, get_font(fonts, "calibri_20"), get_font(fonts, "calibri_13"));
+    draw_temperature_gauge(&mut d, x + 295, y + 5, gpu_package_temp as i32, get_font(fonts, "calibri_20"), get_font(fonts, "calibri_13"));
 
-    d.draw_text_ex(get_font(fonts, "calibri_30"), &*format!("{} MHz", gpu_frequency), Vector2::new(xf + 340.0, yf + 3.0), 30.0, 0.0, Color::WHITE);
-    d.draw_text_ex(get_font(fonts, "calibri_30"), &*format!("{} FPS", gpu_fps), Vector2::new(xf + 340.0, yf + 32.0), 30.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri_25"), &*format!("{} MHz", gpu_frequency), Vector2::new(xf + 360.0, yf + 7.0), 25.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri_25"), &*format!("{} FPS", gpu_fps), Vector2::new(xf + 360.0, yf + 32.0), 25.0, 0.0, Color::WHITE);
     let gradient_color_1 = Color::new(200, 0, 0, 255);
     let gradient_color_2 = Color::new(40, 0, 0, 255);
     d.draw_text_ex(get_font(fonts, "calibri_25_bold"), "Usage", Vector2::new(xf + 10.0, yf + 65.0), 25.0, 0.0, Color::WHITE);
@@ -273,27 +279,27 @@ pub fn draw_rpm_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
 
     d.draw_text_ex(get_font(fonts, "calibri_40_bold"), "RPM", Vector2::new(xf + 10.0, yf + 10.0), 40.0, 0.0, Color::WHITE);
 
-    draw_rpm_gauge(&mut d, x + 100, y , top_1, 1500, get_font(fonts, "calibri_15"), get_font(fonts, "calibri_13"));
+    draw_rpm_gauge(&mut d, x + 100, y , top_1, 1500, get_font(fonts, "calibri_15"));
 
-    draw_rpm_gauge(&mut d, x + 165, y , top_2, 1500, get_font(fonts, "calibri_15"), get_font(fonts, "calibri_13"));
+    draw_rpm_gauge(&mut d, x + 165, y , top_2, 1500, get_font(fonts, "calibri_15"));
     d.draw_text_ex(get_font(fonts, "calibri_20"), "Top", Vector2::new(xf + 175.0, yf + 55.0), 20.0, 0.0, Color::WHITE);
 
-    draw_rpm_gauge(&mut d, x + 230, y, top_3, 1500, get_font(fonts, "calibri_15"), get_font(fonts, "calibri_13"));
+    draw_rpm_gauge(&mut d, x + 230, y, top_3, 1500, get_font(fonts, "calibri_15"));
 
     d.draw_line(x + 100 , y + 54, x + 280, y + 54, Color::WHITE);
     d.draw_line(x + 100 , y + 54, x + 100, y + 49, Color::WHITE);
     d.draw_line(x + 280, y + 54, x + 280, y + 49, Color::WHITE);
 
-    draw_rpm_gauge(&mut d, x + 295, y, front_1, 2000, get_font(fonts, "calibri_15"), get_font(fonts, "calibri_13"));
+    draw_rpm_gauge(&mut d, x + 295, y, front_1, 2000, get_font(fonts, "calibri_15"));
 
-    draw_rpm_gauge(&mut d, x + 360, y, front_2, 2000, get_font(fonts, "calibri_15"), get_font(fonts, "calibri_13"));
+    draw_rpm_gauge(&mut d, x + 360, y, front_2, 2000, get_font(fonts, "calibri_15"));
     d.draw_text_ex(get_font(fonts, "calibri_20"), "Front", Vector2::new(xf + 333.0, yf + 55.0), 20.0, 0.0, Color::WHITE);
 
     d.draw_line(x + 295, y + 54, x + 410, y + 54, Color::WHITE);
     d.draw_line(x + 295, y + 54, x + 295, y + 49, Color::WHITE);
     d.draw_line(x + 410, y + 54, x + 410, y + 49, Color::WHITE);
 
-    draw_rpm_gauge(&mut d, x + 425, y, pump, 5000, get_font(fonts, "calibri_15"), get_font(fonts, "calibri_13"));
+    draw_rpm_gauge(&mut d, x + 425, y, pump, 5000, get_font(fonts, "calibri_15"));
     d.draw_text_ex(get_font(fonts, "calibri_20"), "Pump", Vector2::new(xf + 428.0, yf + 55.0), 20.0, 0.0, Color::WHITE);
 
     d.draw_line(x + 425, y + 54, x + 475, y + 54, Color::WHITE);
@@ -372,20 +378,13 @@ pub fn draw_temperature_gauge(d: &mut RaylibDrawHandle, x: i32, y: i32, value: i
     d.draw_text_ex(font2, "C", Vector2::new(x as f32 + 25.0, y as f32 + 34.0), 13.0, 0.0, degree_color);
 }
 
-pub fn draw_rpm_gauge(d: &mut RaylibDrawHandle, x: i32, y: i32, value: i32, max: i32, font: &Font, font2: &Font) {
+pub fn draw_rpm_gauge(d: &mut RaylibDrawHandle, x: i32, y: i32, value: i32, max: i32, font: &Font) {
     let background = Color::new(0, 100, 20, 255);
     let background1 = Color::new(100, 100, 20, 255);
     let background2 = Color::new(100, 0, 20, 255);
 
     d.draw_circle(x + 25, y + 25, 25.0, Color::LIGHTGRAY);
     d.draw_circle(x + 25, y + 25, 23.0, Color::BLACK);
-
-    let end_angle = 280 * value / 100;
-    let color = match value {
-        v if v > 80 => Color::RED,
-        v if v > 70 => Color::ORANGE,
-        _ => Color::GREEN
-    };
 
     let angle = 180.0 - (value as f32 / max as f32) * 180.0 + 90.0;
     let value_str = &*format!("{}", value);
