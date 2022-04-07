@@ -25,8 +25,8 @@ pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     //let cpu_package_temp: f32 = latest_data.values.get("cpu_package_temp").unwrap_or(&"0".to_string()).parse().unwrap();
     let cpu_power: f32 = latest_data.values.get("cpu_power").unwrap_or(&"0".to_string()).parse().unwrap();
 
-    d.draw_text_ex(get_font(fonts, "calibri_25_bold"), "Ryzen", Vector2::new(xf + 75.0, yf + 10.0), 25.0, 0.0, Color::WHITE);
-    d.draw_text_ex(get_font(fonts, "calibri_20"), "5950X", Vector2::new(xf + 75.0, yf + 30.0), 20.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri_25_bold"), "Ryzen", Vector2::new(xf + 70.0, yf + 10.0), 25.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri_20"), "5950X", Vector2::new(xf + 70.0, yf + 30.0), 20.0, 0.0, Color::WHITE);
 //    d.draw_text_ex(get_font(fonts, "calibri_40_bold"), "CPU", Vector2::new(xf + 10.0, yf + 10.0), 40.0, 0.0, Color::WHITE);
     d.draw_text_ex(get_font(fonts, "calibri_20"), &*format!("{:.2} W", cpu_power), Vector2::new(xf + 150.0, yf + 21.0), 20.0, 0.0, Color::WHITE);
 

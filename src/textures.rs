@@ -15,7 +15,7 @@ pub fn load_textures(rl: &mut RaylibHandle, thread: &RaylibThread, resources: &S
         .expect("Failed to get background");
     let linux_background= rl.load_texture(&thread, &format!("{}/{}", resources, "/images/ubuntu_1024x600.png"))
         .expect("Failed to get background");
-    let ryzen_logo = rl.load_texture(&thread, &format!("{}/{}", resources, "/images/amd_ryzen_9_logo.png"))
+    let ryzen_logo = rl.load_texture(&thread, &format!("{}/{}", resources, "/images/ryzen_logo.png"))
         .expect("Failed to get Ryzen logo");
     let amd_logo = rl.load_texture(&thread, &format!("{}/{}", resources, "/images/amd_logo.png"))
         .expect("Failed to get Ryzen logo");
