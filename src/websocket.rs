@@ -125,7 +125,8 @@ fn ws_register_client(relay_host: &String) -> Result<String, reqwest::Error> {
     let response = match response {
         Err(error) => panic!("Request failed: {}", error),
         Ok(response) => { Log::log(LogLevel::DEBUG, "Request OK"); response }
-    };
+}
+        ;
 
     let register_response: RegisterResponse = match response.json() {
         Err(error) => panic!("Parse json failed: {:?}", error),

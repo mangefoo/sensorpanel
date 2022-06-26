@@ -34,6 +34,10 @@ impl Panel for LinuxPanel {
             .filter(|d| { d.reporter == "crypto-publisher" })
             .collect::<Vec<&SensorData>>();
 
+        let aws_data = data.iter()
+            .filter(|d| { d.reporter == "aws-publisher" })
+            .collect::<Vec<&SensorData>>();
+
         if !linux_data.is_empty() {
             draw_cpu_panel(&mut d, 10, 5, &fonts, &textures, &linux_data);
             if guest_data.is_empty() {
@@ -49,6 +53,6 @@ impl Panel for LinuxPanel {
             draw_rpm_panel(&mut d, 520, 480, &fonts, &linux_data);
         }
 
-        draw_time_panel(&mut d, 530, 560, &fonts, &hue_data, &crypto_data);
+        draw_time_panel(&mut d, 530, 560, &fonts, &hue_data, &crypto_data, &aws_data);
     }
 }

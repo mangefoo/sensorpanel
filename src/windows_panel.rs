@@ -30,6 +30,10 @@ impl Panel for WindowsPanel {
             .filter(|d| { d.reporter == "crypto-publisher" })
             .collect::<Vec<&SensorData>>();
 
+        let aws_data = data.iter()
+            .filter(|d| { d.reporter == "aws-publisher" })
+            .collect::<Vec<&SensorData>>();
+
         if !windows_data.is_empty() {
             draw_cpu_panel(&mut d, 10, 5, &fonts, &windows_data);
             draw_gpu_panel(&mut d, 10, 207, &fonts, &windows_data);
@@ -39,6 +43,6 @@ impl Panel for WindowsPanel {
             draw_hdd_panel(&mut d, 530, 430, &fonts, &windows_data);
         }
 
-        draw_time_panel(&mut d, 530, 560, &fonts, &hue_data, &crypto_data);
+        draw_time_panel(&mut d, 530, 560, &fonts, &hue_data, &crypto_data, &aws_data);
     }
 }
