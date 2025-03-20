@@ -38,7 +38,6 @@ mod event;
 
 fn main() {
     #[link(name="libray", kind="dylib")]
-
     let matches = App::new("Sensor Panel")
         .args(&[Arg::new("configpath")
             .short('c')

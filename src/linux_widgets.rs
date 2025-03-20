@@ -3,6 +3,16 @@ use std::collections::HashMap;
 use crate::fonts::get_font;
 use crate::data::SensorData;
 
+#[cfg(feature = "rpi")]
+fn circle_angle(angle: f32) -> i32 {
+    return angle as i32
+}
+
+#[cfg(feature = "x86")]
+fn circle_angle(angle: f32) -> f32 {
+    return angle as f32
+}
+
 pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, images: &HashMap<String, Texture2D>, data: &Vec<&SensorData>) {
 
     let xf = x as f32;
@@ -70,10 +80,10 @@ pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
         .unwrap_or(&"0".to_string())
         .parse().unwrap();
 
-    let gpu_power: f32 = latest_data.values.get("gpu_power").unwrap_or(&"0".to_string()).parse().unwrap();
-    let gpu_voltage: f32 = latest_data.values.get("gpu_voltage").unwrap_or(&"0".to_string()).parse().unwrap();
-    let gpu_frequency: f32 = latest_data.values.get("gpu_frequency").unwrap_or(&"0".to_string()).parse().unwrap();
-    let gpu_fps: f32 = latest_data.values.get("gpu_fps").unwrap_or(&"0".to_string()).parse().unwrap();
+    let gpu_power: f32 = latest_data.values.get("gpu_power").unwrap_or(&"0".to_string()).parse().unwrap_or(0.0);
+    let gpu_voltage: f32 = latest_data.values.get("gpu_voltage").unwrap_or(&"0".to_string()).parse().unwrap_or(0.0);
+    let gpu_frequency: f32 = latest_data.values.get("gpu_frequency").unwrap_or(&"0".to_string()).parse().unwrap_or(0.0);
+    let gpu_fps: f32 = latest_data.values.get("gpu_fps").unwrap_or(&"0".to_string()).parse().unwrap_or(0.0);
 
     if sub_title.is_some() {
         d.draw_text_ex(get_font(fonts, "calibri_25_bold"), "Radeon", Vector2::new(xf + 70.0, yf + 10.0), 25.0, 0.0, Color::WHITE);
@@ -240,10 +250,10 @@ pub fn draw_temp_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Has
 
     let latest_data = data.last().unwrap();
 
-    let pump_temp: f32 = latest_data.values.get("pump_temp").unwrap_or(&"0".to_string()).parse().unwrap();
-    let front_intake_temp: f32 = latest_data.values.get("front_intake_temp").unwrap_or(&"0".to_string()).parse().unwrap();
-    let exhaust_temp: f32 = latest_data.values.get("exhaust_temp").unwrap_or(&"0".to_string()).parse().unwrap();
-    let ambient_temp: f32 = latest_data.values.get("ambient_temp").unwrap_or(&"0".to_string()).parse().unwrap();
+    let pump_temp: f32 = latest_data.values.get("pump_temp").unwrap_or(&"0".to_string()).parse().unwrap_or(0.0);
+    let front_intake_temp: f32 = latest_data.values.get("front_intake_temp").unwrap_or(&"0".to_string()).parse().unwrap_or(0.0);
+    let exhaust_temp: f32 = latest_data.values.get("exhaust_temp").unwrap_or(&"0".to_string()).parse().unwrap_or(0.0);
+    let ambient_temp: f32 = latest_data.values.get("ambient_temp").unwrap_or(&"0".to_string()).parse().unwrap_or(0.0);
 
     let xf = x as f32;
     let yf = y as f32;
@@ -267,12 +277,12 @@ pub fn draw_rpm_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
 
     let latest_data = data.last().unwrap();
 
-    let top_1 = latest_data.values.get("fan1_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap() as i32;
-    let top_2 = latest_data.values.get("fan2_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap() as i32;
-    let top_3 = latest_data.values.get("fan3_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap() as i32;
-    let front_1 = latest_data.values.get("fan4_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap() as i32;
-    let front_2 = latest_data.values.get("fan5_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap() as i32;
-    let pump = latest_data.values.get("pump_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap() as i32;
+    let top_1 = latest_data.values.get("fan1_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap_or(0.0) as i32;
+    let top_2 = latest_data.values.get("fan2_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap_or(0.0) as i32;
+    let top_3 = latest_data.values.get("fan3_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap_or(0.0) as i32;
+    let front_1 = latest_data.values.get("fan4_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap_or(0.0) as i32;
+    let front_2 = latest_data.values.get("fan5_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap_or(0.0) as i32;
+    let pump = latest_data.values.get("pump_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap_or(0.0) as i32;
 
     let xf = x as f32;
     let yf = y as f32;
@@ -368,7 +378,7 @@ pub fn draw_temperature_gauge(d: &mut RaylibDrawHandle, x: i32, y: i32, value: i
         _ => Color::GREEN
     };
 
-    d.draw_circle_sector(Vector2::new(x as f32 + 25.0, y as f32 + 25.0), 20.0, 680.0 - end_angle as f32, 680.0, 1000, color);
+    d.draw_circle_sector(Vector2::new(x as f32 + 25.0, y as f32 + 25.0), 20.0, circle_angle(680.0 - end_angle as f32), circle_angle(680.0), 1000, color);
     d.draw_circle(x + 25, y + 25, 13.0, Color::BLACK);
 
     d.draw_text_ex(font, &value.to_string(), Vector2::new(x as f32 + 15.0, y as f32 + 17.0), 20.0, 0.0, Color::WHITE);
@@ -390,9 +400,9 @@ pub fn draw_rpm_gauge(d: &mut RaylibDrawHandle, x: i32, y: i32, value: i32, max:
     let value_str = &*format!("{}", value);
     let text_adjust = (4 - value_str.len()) * 4;
 
-    d.draw_circle_sector(Vector2::new(x as f32 + 25.0, y as f32 + 25.0), 20.0, 90.0, 270.0, 100, background);
-    d.draw_circle_sector(Vector2::new(x as f32 + 25.0, y as f32 + 25.0), 20.0, 90.0, 140.0, 100, background1);
-    d.draw_circle_sector(Vector2::new(x as f32 + 25.0, y as f32 + 25.0), 20.0, 90.0, 110.0, 100, background2);
-    d.draw_circle_sector(Vector2::new(x as f32 + 25.0, y as f32 + 25.0), 20.0, angle, angle + 10.0, 10, Color::WHITE);
+    d.draw_circle_sector(Vector2::new(x as f32 + 25.0, y as f32 + 25.0), 20.0, circle_angle(90.0), circle_angle(270.0), 100, background);
+    d.draw_circle_sector(Vector2::new(x as f32 + 25.0, y as f32 + 25.0), 20.0, circle_angle(90.0), circle_angle(140.0), 100, background1);
+    d.draw_circle_sector(Vector2::new(x as f32 + 25.0, y as f32 + 25.0), 20.0, circle_angle(90.0), circle_angle(110.0), 100, background2);
+    d.draw_circle_sector(Vector2::new(x as f32 + 25.0, y as f32 + 25.0), 20.0, circle_angle(angle), circle_angle(angle + 10.0), 10, Color::WHITE);
     d.draw_text_ex(font, &*format!("{}", value), Vector2::new(x as f32 + 11.0 + text_adjust as f32, y as f32 + 27.0), 15.0, 0.0, Color::WHITE);
 }

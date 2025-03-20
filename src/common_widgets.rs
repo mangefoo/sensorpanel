@@ -40,8 +40,8 @@ pub fn draw_time_panel(d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap
         d.draw_text_ex(get_font(fonts, "calibri_20"), "BTC", Vector2::new((x) as f32, (y + 5) as f32), 20.0, 0.0, Color::GRAY);
         d.draw_text_ex(get_font(fonts, "calibri_20"), &format!("${:.0}", bitcoin), Vector2::new((x + 40) as f32, (y + 5) as f32), 20.0, 0.0, bitcoin_color);
 
-        // d.draw_text_ex(get_font(fonts, "calibri_20"), "ETH", Vector2::new((x + 120) as f32, (y + 5) as f32), 20.0, 0.0, Color::GRAY);
-        // d.draw_text_ex(get_font(fonts, "calibri_20"), &format!("${:.0}", ethereum), Vector2::new((x + 160) as f32, (y + 5) as f32), 20.0, 0.0, ethereum_color);
+        d.draw_text_ex(get_font(fonts, "calibri_20"), "ETH", Vector2::new((x + 120) as f32, (y + 5) as f32), 20.0, 0.0, Color::GRAY);
+        d.draw_text_ex(get_font(fonts, "calibri_20"), &format!("${:.0}", ethereum), Vector2::new((x + 160) as f32, (y + 5) as f32), 20.0, 0.0, ethereum_color);
     }
 
     if latest_aws.is_some() {

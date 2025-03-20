@@ -1,4 +1,4 @@
 #resources = '/home/pi/sensorpanel/resources'
 relay_host = 'sensor-relay.int.mindphaser.se'
 presence_threshold_secs = 600
-fps = 60
+fps = 1
