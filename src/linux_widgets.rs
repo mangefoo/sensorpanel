@@ -34,7 +34,7 @@ pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     let cpu_die_temp: f32 = latest_data.values.get("cpu_temp").unwrap_or(&"0".to_string()).parse().unwrap();
     //let cpu_package_temp: f32 = latest_data.values.get("cpu_package_temp").unwrap_or(&"0".to_string()).parse().unwrap();
     let cpu_power: f32 = latest_data.values.get("cpu_power").unwrap_or(&"0".to_string()).parse().unwrap();
-    let cpu_fan = latest_data.values.get("pump_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap_or(0.0) as i32;
+    let cpu_fan = latest_data.values.get("cpu_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap_or(0.0) as i32;
 
     d.draw_text_ex(get_font(fonts, "calibri_25_bold"), "Ryzen", Vector2::new(xf + 70.0, yf + 10.0), 25.0, 0.0, Color::WHITE);
     d.draw_text_ex(get_font(fonts, "calibri_20"), "5950X", Vector2::new(xf + 70.0, yf + 30.0), 20.0, 0.0, Color::WHITE);
@@ -62,14 +62,12 @@ pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     draw_graph(&mut d, x + 10, y + 100, usage_graph_values, Color::GREEN);
 }
 
-pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, images: &HashMap<String, Texture2D>, data: &Vec<&SensorData>, sub_title: Option<&str>, should_draw_graph: bool) {
+pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, images: &HashMap<String, Texture2D>, data: &Vec<&SensorData>, should_draw_graph: bool) {
 
     let xf = x as f32;
     let yf = y as f32;
 
     let latest_data = data.last().unwrap();
-
-    d.draw_texture(images.get("nvidia_logo").unwrap(), x + 10, y + 5, Color::WHITE);
 
     let gpu_utilization: f32 = latest_data.values.get("gpu_utilization").unwrap_or(&"0".to_string()).parse().unwrap();
     let gpu_die_temp: f32 = latest_data.values.get("gpu_edge_temp")
@@ -87,12 +85,19 @@ pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     let gpu_frequency: f32 = latest_data.values.get("gpu_frequency").unwrap_or(&"0".to_string()).parse().unwrap_or(0.0);
     let gpu_fps: f32 = latest_data.values.get("gpu_fps").unwrap_or(&"0".to_string()).parse().unwrap_or(0.0);
 
-    if sub_title.is_some() {
-        d.draw_text_ex(get_font(fonts, "calibri_25_bold"), "Nvidia", Vector2::new(xf + 70.0, yf + 10.0), 25.0, 0.0, Color::WHITE);
-        d.draw_text_ex(get_font(fonts, "calibri_20"), sub_title.unwrap(), Vector2::new(xf + 70.0, yf + 30.0), 20.0, 0.0, Color::WHITE);
+    let unknown = "Unknown".to_string();
+    let gpu_vendor = latest_data.values.get("gpu_vendor").unwrap_or(&unknown);
+    let gpu_model = latest_data.values.get("gpu_model").unwrap_or(&unknown);
+
+    if gpu_vendor.to_lowercase() == "nvidia" {
+        d.draw_texture(images.get("nvidia_logo").unwrap(), x + 10, y + 5, Color::WHITE);
     } else {
-        d.draw_text_ex(get_font(fonts, "calibri_50_bold"), "GPU", Vector2::new(xf + 75.0, yf + 10.0), 50.0, 0.0, Color::WHITE);
+        d.draw_texture(images.get("amd_logo").unwrap(), x + 10, y + 5, Color::WHITE);
     }
+
+    d.draw_text_ex(get_font(fonts, "calibri_25_bold"), &gpu_vendor, Vector2::new(xf + 70.0, yf + 10.0), 25.0, 0.0, Color::WHITE);
+    d.draw_text_ex(get_font(fonts, "calibri_20"), gpu_model, Vector2::new(xf + 70.0, yf + 30.0), 20.0, 0.0, Color::WHITE);
+
     d.draw_text_ex(get_font(fonts, "calibri_20"), &*format!("{:.0} W", gpu_power), Vector2::new(xf + 160.0,  yf + 12.0), 20.0, 0.0, Color::WHITE);
     d.draw_text_ex(get_font(fonts, "calibri_20"), &*format!("{:.2} V", gpu_voltage), Vector2::new(xf + 160.0, yf + 30.0), 20.0, 0.0, Color::WHITE);
 
@@ -284,7 +289,7 @@ pub fn draw_rpm_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     let top_3 = latest_data.values.get("fan3_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap_or(0.0) as i32;
     let front_1 = latest_data.values.get("fan4_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap_or(0.0) as i32;
     let front_2 = latest_data.values.get("fan5_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap_or(0.0) as i32;
-    let pump = latest_data.values.get("pump_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap_or(0.0) as i32;
+    let cpu = latest_data.values.get("cpu_rpm").unwrap_or(&"0.0".to_string()).parse::<f32>().unwrap_or(0.0) as i32;
 
     let xf = x as f32;
     let yf = y as f32;
@@ -311,8 +316,8 @@ pub fn draw_rpm_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     d.draw_line(x + 295, y + 54, x + 295, y + 49, Color::WHITE);
     d.draw_line(x + 410, y + 54, x + 410, y + 49, Color::WHITE);
 
-    draw_rpm_gauge(&mut d, x + 425, y, pump, 5000, get_font(fonts, "calibri_15"));
-    d.draw_text_ex(get_font(fonts, "calibri_20"), "Pump", Vector2::new(xf + 428.0, yf + 55.0), 20.0, 0.0, Color::WHITE);
+    draw_rpm_gauge(&mut d, x + 425, y, cpu, 5000, get_font(fonts, "calibri_15"));
+    d.draw_text_ex(get_font(fonts, "calibri_20"), "CPU", Vector2::new(xf + 433.0, yf + 55.0), 20.0, 0.0, Color::WHITE);
 
     d.draw_line(x + 425, y + 54, x + 475, y + 54, Color::WHITE);
     d.draw_line(x + 425, y + 54, x + 425, y + 49, Color::WHITE);
