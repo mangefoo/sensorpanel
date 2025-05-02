@@ -41,7 +41,7 @@ impl Panel for LinuxPanel {
         if !linux_data.is_empty() {
             draw_cpu_panel(&mut d, 10, 5, &fonts, &textures, &linux_data);
             if guest_data.is_empty() {
-                draw_gpu_panel(&mut d, 10, 207, &fonts, textures, &linux_data, Some("RX 6600"), true);
+                draw_gpu_panel(&mut d, 10, 207, &fonts, textures, &linux_data, Some("RTX 5080"), true);
             } else {
                 draw_gpu_panel(&mut d, 10, 197, &fonts, textures, &linux_data, Some("RX 6600"), false);
                 draw_gpu_panel(&mut d, 10, 307, &fonts, textures, &guest_data, Some("6900 XT"), false);
