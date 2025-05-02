@@ -44,7 +44,7 @@ pub trait StateExt {
 }
 
 impl StateExt for State {
-    fn transfer_to(self: Self, mut other: &mut State) {
+    fn transfer_to(self: Self, other: &mut State) {
         other.presence = self.presence;
         other.screen_state = self.screen_state;
         other.screen_on = self.screen_on;
@@ -55,7 +55,7 @@ impl StateExt for State {
         let current_time = SystemTime::now();
         let duration_since_switch_to_false = current_time.duration_since(self.presence.last_switch_to_false).unwrap();
         let mut new_state = self.clone();
-        let mut new_presence = &mut new_state.presence;
+        let new_presence = &mut new_state.presence;
 
         if present && new_presence.present == Present::NO {
             new_presence.present = Present::YES;
