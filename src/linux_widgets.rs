@@ -69,16 +69,22 @@ pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
 
     let latest_data = data.last().unwrap();
 
-    let gpu_utilization: f32 = latest_data.values.get("gpu_utilization").unwrap_or(&"0".to_string()).parse().unwrap();
+    let gpu_utilization: f32 = latest_data.values.get("gpu_utilization")
+        .unwrap_or(&"0".to_string())
+        .parse()
+        .unwrap_or(0.0);
+
     let gpu_die_temp: f32 = latest_data.values.get("gpu_edge_temp")
         .or(latest_data.values.get("gpu_die_temp"))
         .unwrap_or(&"0".to_string())
-        .parse().unwrap();
+        .parse()
+        .unwrap_or(0.0);
 
     let gpu_package_temp: f32 = latest_data.values.get("gpu_junction_temp")
         .or(latest_data.values.get("gpu_package_temp"))
         .unwrap_or(&"0".to_string())
-        .parse().unwrap();
+        .parse()
+        .unwrap_or(0.0);
 
     let gpu_power: f32 = latest_data.values.get("gpu_power").unwrap_or(&"0".to_string()).parse().unwrap_or(0.0);
     let gpu_voltage: f32 = latest_data.values.get("gpu_voltage").unwrap_or(&"0".to_string()).parse().unwrap_or(0.0);
