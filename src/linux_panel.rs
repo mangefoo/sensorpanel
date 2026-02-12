@@ -15,8 +15,8 @@ impl Panel for LinuxPanel {
     fn draw(fonts: &HashMap<String, Font>, textures: &HashMap<String, Texture2D>, mut d: &mut RaylibDrawHandle, data: &Vec<SensorData>) {
         let background = get_texture(textures, "linux_background");
 
-        d.draw_texture(&background, 0, 0, Color::WHITE);
         d.clear_background(Color::WHITE);
+        d.draw_texture(&background, 0, 0, Color::WHITE);
 
         let linux_data = data.iter()
             .filter(|d| { d.reporter == "linux-sensor-agent" })

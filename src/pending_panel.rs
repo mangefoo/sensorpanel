@@ -16,8 +16,8 @@ impl Panel for PendingPanel {
     fn draw(fonts: &HashMap<String, Font>, textures: &HashMap<String, Texture2D>, d: &mut RaylibDrawHandle, data: &Vec<SensorData>) {
         let background = get_texture(textures, "pending_background");
 
-        d.draw_texture(&background, 0, 0, Color::WHITE);
         d.clear_background(Color::WHITE);
+        d.draw_texture(&background, 0, 0, Color::WHITE);
 
         let hue_data = data.iter()
             .filter(|d| { d.reporter == "hue-sensor-agent" })

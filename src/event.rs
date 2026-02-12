@@ -31,11 +31,7 @@ fn handle_sensor(event: SensorReport, state: &State, config: &Config) -> State {
     let mut new_state = state.clone();
 
     if let Some(presence) = event.sensors.get("hue_presence") {
-        handle_presence(presence, state, config);
-    }
-
-    if event.sensors.contains_key("hue_presence") {
-        new_state = handle_presence(event.sensors.get("hue_presence").unwrap(), state, config);
+        new_state = handle_presence(presence, state, config);
     }
 
     new_state.sensor_data.push(SensorData { reporter: event.reporter.clone(), values: event.sensors.clone(), received: event.received.clone() });

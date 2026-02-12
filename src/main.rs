@@ -1,6 +1,6 @@
 use crate::fonts::load_fonts;
 use crate::textures::load_textures;
-use std::{thread, process};
+use std::thread;
 use std::sync::{Arc, Mutex};
 use crate::config::{read_config};
 use clap::{App, Arg};
@@ -125,7 +125,6 @@ fn event_receiver_setup(context: &Context) {
         new_state.transfer_to(state);
     },
     |error| {
-        Log::log(LogLevel::ERROR, &*format!("Got error {}", error));
-        process::exit(1);
+        Log::log(LogLevel::ERROR, &format!("Receiver loop ended: {}", error));
     });
 }

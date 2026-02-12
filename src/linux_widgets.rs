@@ -3,12 +3,6 @@ use std::collections::HashMap;
 use crate::fonts::get_font;
 use crate::data::SensorData;
 
-#[cfg(feature = "rpi")]
-fn circle_angle(angle: f32) -> i32 {
-    return angle as i32
-}
-
-#[cfg(feature = "x86")]
 fn circle_angle(angle: f32) -> f32 {
     return angle as f32
 }
