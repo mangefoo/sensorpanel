@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::time::{Instant, Duration};
 use serde::{Serialize, Deserialize, Deserializer};
 use serde_json::json;
 use std::collections::HashMap;
@@ -70,47 +70,69 @@ impl WebSocketExt for WebSocket {
 
 fn ws_client_setup(config: &Config) -> Receiver<SensorReport> {
     let (tx, rx): (Sender<SensorReport>, Receiver<SensorReport>) = mpsc::channel();
-    let thread_tx = tx.clone();
-    let relay_host= config.relay_host.clone();
-    let thread_fn = move || {
-        let id = match ws_register_client(&relay_host) {
-            Err(error) => panic!("Failed to get WS URL: {}", error),
-            Ok(url) => url
+    let relay_host = config.relay_host.clone();
+
+    thread::spawn(move || {
+        ws_connect_loop(&relay_host, tx);
+    });
+
+    rx
+}
+
+fn ws_connect_loop(relay_host: &str, sender: Sender<SensorReport>) {
+    loop {
+        let id = match ws_register_client(relay_host) {
+            Ok(id) => id,
+            Err(error) => {
+                Log::log(LogLevel::ERROR, &format!("Failed to register: {}", error));
+                thread::sleep(Duration::from_secs(5));
+                continue;
+            }
         };
 
-        Log::log(LogLevel::DEBUG, &*format!("Got WS ID: {}", id));
+        Log::log(LogLevel::INFO, &format!("Registered with ID: {}", id));
+        let url = format!("ws://{}/ws/{}", relay_host, id);
 
-        ws_read_loop(format!("ws://{}/ws/{}", relay_host, id), thread_tx);
-    };
-
-    thread::spawn(thread_fn);
-
-    return rx;
-}
-
-fn ws_read_loop(url: String, value_sender: Sender<SensorReport>) {
-    let (mut socket, response) =
-        connect(Url::parse(&url).unwrap()).expect("Can't connect");
-
-    Log::log(LogLevel::DEBUG, "Connected to the server");
-    Log::log(LogLevel::DEBUG, &*format!("Response HTTP code: {}", response.status()));
-    Log::log(LogLevel::DEBUG, "Response contains the following headers:");
-    for (ref header, _value) in response.headers() {
-        Log::log(LogLevel::DEBUG,&*format!("* {}", header));
-    }
-
-    loop {
-        let msg = socket.read_message().expect("Error reading message");
-        let report: SensorReport = serde_json::from_str(msg.to_text().unwrap()).unwrap();
-        let result = value_sender.send(report);
-        match result {
-            Err(error) => { Log::log(LogLevel::ERROR, &*format!("Failed to send request: {}", error))}
-            _ => {}
+        match connect(Url::parse(&url).unwrap()) {
+            Ok((mut socket, _)) => {
+                Log::log(LogLevel::INFO, "Connected to WebSocket");
+                loop {
+                    match socket.read_message() {
+                        Ok(msg) => {
+                            if let Ok(text) = msg.to_text() {
+                                match serde_json::from_str::<SensorReport>(text) {
+                                    Ok(report) => {
+                                        if let Err(e) = sender.send(report) {
+                                            Log::log(LogLevel::ERROR, &format!("Channel send failed: {}", e));
+                                            return;
+                                        }
+                                    }
+                                    Err(e) => {
+                                        Log::log(LogLevel::ERROR, &format!("Failed to parse message: {}", e));
+                                    }
+                                }
+                            } else {
+                                Log::log(LogLevel::DEBUG, "Received non-text WebSocket message");
+                            }
+                        }
+                        Err(e) => {
+                            Log::log(LogLevel::ERROR, &format!("WebSocket read error: {}", e));
+                            break;
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                Log::log(LogLevel::ERROR, &format!("WebSocket connect failed: {}", e));
+            }
         }
+
+        Log::log(LogLevel::INFO, "Reconnecting in 5 seconds...");
+        thread::sleep(Duration::from_secs(5));
     }
 }
 
-fn ws_register_client(relay_host: &String) -> Result<String, reqwest::Error> {
+fn ws_register_client(relay_host: &str) -> Result<String, String> {
     let register_body = json!({
         "topics": ["sensors", "actions"],
     });
@@ -120,18 +142,11 @@ fn ws_register_client(relay_host: &String) -> Result<String, reqwest::Error> {
     let response = blocking::Client::new()
         .post(request_url)
         .json(&register_body)
-        .send();
+        .send()
+        .map_err(|e| format!("HTTP request failed: {}", e))?;
 
-    let response = match response {
-        Err(error) => panic!("Request failed: {}", error),
-        Ok(response) => { Log::log(LogLevel::DEBUG, "Request OK"); response }
-}
-        ;
-
-    let register_response: RegisterResponse = match response.json() {
-        Err(error) => panic!("Parse json failed: {:?}", error),
-        Ok(json) => json
-    };
+    let register_response: RegisterResponse = response.json()
+        .map_err(|e| format!("JSON parse failed: {}", e))?;
 
     Ok(register_response.id)
 }

@@ -37,18 +37,18 @@ pub fn draw_time_panel(d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap
             ethereum_color = get_diff_color(ethereum - previous_ethereum);
         }
 
-        d.draw_text_ex(get_font(fonts, "calibri_20"), "BTC", Vector2::new((x) as f32, (y + 5) as f32), 20.0, 0.0, Color::GRAY);
-        d.draw_text_ex(get_font(fonts, "calibri_20"), &format!("${:.0}", bitcoin), Vector2::new((x + 40) as f32, (y + 5) as f32), 20.0, 0.0, bitcoin_color);
+        d.draw_text_ex(get_font(fonts, "calibri_20"), "BTC", Vector2::new(x as f32, (y + 5) as f32), 20.0, 0.0, Color::GRAY);
+        d.draw_text_ex(get_font(fonts, "calibri_20"), &format!("${:.0}", bitcoin), Vector2::new((x + 28) as f32, (y + 5) as f32), 20.0, 0.0, bitcoin_color);
 
-        d.draw_text_ex(get_font(fonts, "calibri_20"), "ETH", Vector2::new((x + 120) as f32, (y + 5) as f32), 20.0, 0.0, Color::GRAY);
-        d.draw_text_ex(get_font(fonts, "calibri_20"), &format!("${:.0}", ethereum), Vector2::new((x + 160) as f32, (y + 5) as f32), 20.0, 0.0, ethereum_color);
+        d.draw_text_ex(get_font(fonts, "calibri_20"), "ETH", Vector2::new((x + 95) as f32, (y + 5) as f32), 20.0, 0.0, Color::GRAY);
+        d.draw_text_ex(get_font(fonts, "calibri_20"), &format!("${:.0}", ethereum), Vector2::new((x + 123) as f32, (y + 5) as f32), 20.0, 0.0, ethereum_color);
     }
 
     if latest_aws.is_some() {
         let cost: f32 = latest_aws.unwrap().values.get("cost").unwrap_or(&"0".to_string()).parse().unwrap();
 
-        d.draw_text_ex(get_font(fonts, "calibri_20"), "AWS", Vector2::new((x + 120) as f32, (y + 5) as f32), 20.0, 0.0, Color::GRAY);
-        d.draw_text_ex(get_font(fonts, "calibri_20"), &format!("${:.2}", cost), Vector2::new((x + 165) as f32, (y + 5) as f32), 20.0, 0.0, Color::WHITE);
+        d.draw_text_ex(get_font(fonts, "calibri_20"), "AWS", Vector2::new((x + 185) as f32, (y + 5) as f32), 20.0, 0.0, Color::GRAY);
+        d.draw_text_ex(get_font(fonts, "calibri_20"), &format!("${:.2}", cost), Vector2::new((x + 213) as f32, (y + 5) as f32), 20.0, 0.0, Color::WHITE);
     }
 
     let date = Local::now().format("%H:%M:%S").to_string();

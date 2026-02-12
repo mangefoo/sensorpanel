@@ -37,7 +37,6 @@ mod context;
 mod event;
 
 fn main() {
-    #[link(name="libray", kind="dylib")]
     let matches = App::new("Sensor Panel")
         .args(&[Arg::new("configpath")
             .short('c')
@@ -80,26 +79,27 @@ fn main() {
 }
 
 fn draw_window(context: &mut Context) {
-    if context.state.lock().unwrap().screen_on {
+    let (screen_on, sensor_data) = {
+        let state = context.state.lock().unwrap();
+        (state.screen_on, state.sensor_data.clone())
+    };
+
+    if screen_on {
         let mut d = context.handle.begin_drawing(&context.thread);
         let now = Instant::now();
 
-        let has_windows_data = context.state.lock().unwrap().sensor_data.iter()
-            .filter(|d| { d.reporter == "windows-sensor-agent" })
-            .filter(|d| { now - d.received < Duration::from_secs(10) })
-            .count() > 0;
+        let has_windows_data = sensor_data.iter()
+            .any(|d| d.reporter == "windows-sensor-agent" && now - d.received < Duration::from_secs(10));
 
-        let has_linux_data = context.state.lock().unwrap().sensor_data.iter()
-            .filter(|d| { d.reporter == "linux-sensor-agent" })
-            .filter(|d| { now - d.received < Duration::from_secs(10) })
-            .count() > 0;
+        let has_linux_data = sensor_data.iter()
+            .any(|d| d.reporter == "linux-sensor-agent" && now - d.received < Duration::from_secs(10));
 
         if has_windows_data {
-            WindowsPanel::draw(&context.fonts, &context.textures, &mut d, &(context.state.lock().unwrap().sensor_data));
+            WindowsPanel::draw(&context.fonts, &context.textures, &mut d, &sensor_data);
         } else if has_linux_data {
-            LinuxPanel::draw(&context.fonts, &context.textures, &mut d, &(context.state.lock().unwrap().sensor_data));
+            LinuxPanel::draw(&context.fonts, &context.textures, &mut d, &sensor_data);
         } else {
-            PendingPanel::draw(&context.fonts, &context.textures, &mut d, &(context.state.lock().unwrap().sensor_data));
+            PendingPanel::draw(&context.fonts, &context.textures, &mut d, &sensor_data);
         }
     } else {
         if get_screen_control().should_clear_screen() {
@@ -125,7 +125,7 @@ fn event_receiver_setup(context: &Context) {
         new_state.transfer_to(state);
     },
     |error| {
-        Log::log(LogLevel::ERROR, &*format!("Got error {}", error));
+        Log::log(LogLevel::ERROR, &format!("Got error {}", error));
         process::exit(1);
     });
 }

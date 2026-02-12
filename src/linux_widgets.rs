@@ -14,6 +14,7 @@ fn circle_angle(angle: f32) -> f32 {
 }
 
 pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, images: &HashMap<String, Texture2D>, data: &Vec<&SensorData>) {
+    if data.is_empty() { return; }
 
     let xf = x as f32;
     let yf = y as f32;
@@ -63,6 +64,7 @@ pub fn draw_cpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
 }
 
 pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, images: &HashMap<String, Texture2D>, data: &Vec<&SensorData>, should_draw_graph: bool) {
+    if data.is_empty() { return; }
 
     let xf = x as f32;
     let yf = y as f32;
@@ -131,6 +133,7 @@ pub fn draw_gpu_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
 }
 
 pub fn draw_mem_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>) {
+    if data.is_empty() { return; }
 
     let xf = x as f32;
     let yf = y as f32;
@@ -139,7 +142,7 @@ pub fn draw_mem_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
     let mem_available: f32 = latest_data.values.get("mem_available").unwrap_or(&"0".to_string()).parse().unwrap();
     let mem_total : f32 = latest_data.values.get("mem_total").unwrap_or(&"0".to_string()).parse().unwrap();
     let mem_used = mem_total - mem_available;
-    let mem_used_percent = mem_used / mem_total;
+    let mem_used_percent = if mem_total > 0.0 { mem_used / mem_total } else { 0.0 };
 
     d.draw_text_ex(get_font(fonts, "calibri_40_bold"), "Mem", Vector2::new(xf + 10.0, yf + 10.0), 40.0, 0.0, Color::WHITE);
     d.draw_text_ex(get_font(fonts, "calibri_20"), &*format!("Total: {:.2} GB", mem_total), Vector2::new(xf + 110.0,  yf + 12.0), 20.0, 0.0, Color::WHITE);
@@ -152,6 +155,7 @@ pub fn draw_mem_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Hash
 }
 
 pub fn draw_core_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>) {
+    if data.is_empty() { return; }
 
     let gradient_color_1 = Color::new(0, 200, 0, 255);
     let gradient_color_2 = Color::new(0, 40, 0, 255);
@@ -260,6 +264,7 @@ fn draw_graphs(mut d: &mut &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMa
 fn bytes_to_mbit(bytes: i64) -> f32 { (bytes * 8) as f32 / 1000000.0 }
 
 pub fn draw_temp_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>) {
+    if data.is_empty() { return; }
 
     let latest_data = data.last().unwrap();
 
@@ -287,6 +292,7 @@ pub fn draw_temp_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &Has
 }
 
 pub fn draw_rpm_panel(mut d: &mut RaylibDrawHandle, x: i32, y: i32, fonts: &HashMap<String, Font>, data: &Vec<&SensorData>) {
+    if data.is_empty() { return; }
 
     let latest_data = data.last().unwrap();
 
@@ -352,15 +358,15 @@ fn draw_graph(d: &mut &mut RaylibDrawHandle, x: i32, y: i32, historical: &Vec<f3
     }
 
     let mut last = historical.get(historical.len() - 1).unwrap().clone();
-    let mut scew = 0;
+    let mut skew = 0;
     let entries = if historical.len() > 231 { 231 } else { historical.len() };
     for i in 2..entries {
         let value = historical[historical.len() - i];
         if last >= 1.0 || value >= 1.0 {
-            d.draw_line(x + 460 - 1 - scew * 2 as i32, y + 79 - (last * 0.77) as i32, x + 460 - 1 - (scew + 1) * 2 as i32, y + 79 - (value * 0.77) as i32, color);
+            d.draw_line(x + 460 - 1 - skew * 2 as i32, y + 79 - (last * 0.77) as i32, x + 460 - 1 - (skew + 1) * 2 as i32, y + 79 - (value * 0.77) as i32, color);
         }
         last = value;
-        scew = scew + 1;
+        skew = skew + 1;
     }
 }
 

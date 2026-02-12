@@ -3,7 +3,7 @@ use raylib::core::drawing::{RaylibDrawHandle, RaylibDraw};
 use raylib::color::Color;
 use crate::windows_widgets::{draw_cpu_panel, draw_gpu_panel, draw_mem_panel, draw_core_panel, draw_hdd_panel, draw_net_panel};
 use raylib::core::text::Font;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use crate::common_widgets::draw_time_panel;
 use crate::textures::get_texture;
 use crate::data::SensorData;
@@ -12,11 +12,10 @@ use crate::panel::Panel;
 pub(crate) struct WindowsPanel();
 
 impl Panel for WindowsPanel {
-    fn draw(fonts: &HashMap<String, Font>, textures: &HashMap<String, Texture2D>, mut d: &mut RaylibDrawHandle, data: &Vec<SensorData>) {
+    fn draw(fonts: &HashMap<String, Font>, textures: &HashMap<String, Texture2D>, mut d: &mut RaylibDrawHandle, data: &VecDeque<SensorData>) {
+        d.clear_background(Color::BLACK);
         let background = get_texture(textures, "windows_background");
-
         d.draw_texture(&background, 0, 0, Color::WHITE);
-        d.clear_background(Color::WHITE);
 
         let windows_data = data.iter()
             .filter(|d| { d.reporter == "windows-sensor-agent" })

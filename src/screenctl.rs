@@ -38,13 +38,13 @@ impl ScreenControl for TvServiceScreenControl {
             Command::new(TVSERVICE_PATH)
                 .arg("-o")
                 .status()
-                .expect("Failed to turn on screen with tvservice");
+                .expect("Failed to turn off screen with tvservice");
 
             if Path::new(UHUBCTL_PATH).exists() {
                 Command::new(UHUBCTL_PATH)
                     .args(&["-l", "1-1", "-a", "0", "-r", "100"])
                     .status()
-                    .expect("Failed to turn on screen with uhubctl");
+                    .expect("Failed to turn off screen with uhubctl");
             }
         });
 

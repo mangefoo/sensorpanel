@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use crate::data::{SensorData};
 use std::time::SystemTime;
 use crate::log::{Log, LogExt, LogLevel};
@@ -23,7 +24,7 @@ pub struct PresenceData {
 
 #[derive(Clone, Debug)]
 pub struct State {
-    pub sensor_data: Vec<SensorData>,
+    pub sensor_data: VecDeque<SensorData>,
     pub screen_on: bool,
     pub screen_state: ScreenState,
     pub presence: PresenceData
@@ -107,7 +108,7 @@ impl StateExt for State {
 
     fn init() -> State {
         State {
-            sensor_data: Vec::new(),
+            sensor_data: VecDeque::new(),
             screen_on: true,
             screen_state: ScreenState::AUTO,
             presence: PresenceData {
