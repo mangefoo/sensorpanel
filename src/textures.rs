@@ -19,12 +19,15 @@ pub fn load_textures(rl: &mut RaylibHandle, thread: &RaylibThread, resources: &S
         .expect("Failed to get Ryzen logo");
     let amd_logo = rl.load_texture(&thread, &format!("{}/{}", resources, "/images/amd_logo.png"))
         .expect("Failed to get Ryzen logo");
+    let nvidia_logo = rl.load_texture(&thread, &format!("{}/{}", resources, "/images/nvidia.png"))
+        .expect("Failed to get Nvidia logo");
 
     textures.insert("windows_background".to_string(), windows_background);
     textures.insert("pending_background".to_string(), pending_background);
     textures.insert("linux_background".to_string(), linux_background);
     textures.insert("ryzen_logo".to_string(), ryzen_logo);
     textures.insert("amd_logo".to_string(), amd_logo);
+    textures.insert("nvidia_logo".to_string(), nvidia_logo);
 
     return textures;
 }
